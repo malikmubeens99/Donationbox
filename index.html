@@ -3,93 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wisdom Foundation - Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Wisdom Admin | Digital Box Management</title>
+    
+    <!-- Tailwind CSS for modern, flexible UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .qr-card { text-align: center; padding: 15px; border: 1px dashed #ccc; margin-top: 10px; background: #fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 4px; }
+        
+        .active-nav { border-left: 4px solid #fff; background-color: rgba(255,255,255,0.1); }
+        
+        /* Glassmorphism card effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Print styles for QR sticker */
         @media print {
             body * { visibility: hidden; }
             #printableArea, #printableArea * { visibility: visible; }
-            #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
+            #printableArea { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
         }
     </style>
 </head>
-<body>
+<body class="flex bg-gray-50 h-screen overflow-hidden">
 
-<div class="container my-4">
-    <h2 class="mb-4 text-primary font-weight-bold">💚 Wisdom Foundation - Donation Box System</h2>
-
-    <div class="row g-4">
-        <!-- Add New Shop Form -->
-        <div class="col-md-5">
-            <div class="card p-4">
-                <h4 class="card-title mb-3">Nai Dukaan Add Karein</h4>
-                <form id="addShopForm">
-                    <div class="mb-3">
-                        <label class="form-label">Shop Name / Dukaan Ka Naam</label>
-                        <input type="text" id="shopName" class="form-control" placeholder="e.g. Bismillah General Store" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Owner Name</label>
-                        <input type="text" id="ownerName" class="form-control" placeholder="e.g. Muhammad Ali">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone / WhatsApp</label>
-                        <input type="text" id="ownerPhone" class="form-control" placeholder="03001234567" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Area / Zone</label>
-                        <input type="text" id="shopArea" class="form-control" placeholder="e.g. Main Market, Lahore" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Add Shop & Generate QR</button>
-                </form>
-            </div>
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 bg-indigo-700 p-6 flex flex-col text-white">
+        <div class="flex items-center gap-3 mb-10">
+            <span class="text-3xl">💚</span>
+            <h1 class="text-xl font-bold">Wisdom Admin</h1>
         </div>
+        <div class="space-y-3 flex-grow">
+            <a href="#" class="flex items-center gap-3 p-3 rounded-lg active-nav transition">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="collector.html" target="_blank" class="flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-600 transition">
+                <span>📱</span> Rider App
+            </a>
+        </div>
+        <div class="border-t border-indigo-600 pt-4 text-sm text-indigo-200">
+            © 2024 Wisdom Foundation
+        </div>
+    </nav>
 
-        <!-- Newly Generated QR Card -->
-        <div class="col-md-7">
-            <div class="card p-4">
-                <h4 class="card-title mb-3">Generated QR Code</h4>
-                <div id="printableArea" class="qr-card d-none">
-                    <h3 id="qrShopTitle" class="fw-bold mb-1"></h3>
-                    <p id="qrShopArea" class="text-muted mb-2"></p>
-                    <div id="qrcode" class="d-flex justify-content-center my-3"></div>
-                    <small class="text-secondary">Wisdom Foundation Donation Box #<span id="qrShopId"></span></small>
+    <!-- Main Content Area -->
+    <main class="flex-1 p-8 overflow-y-auto">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <p class="text-sm text-gray-500">Welcome Back,</p>
+                <h2 class="text-3xl font-bold text-gray-900">Donation Box Overview</h2>
+            </div>
+            <button class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition shadow-md">
+                <span>➕</span> Quick Report
+            </button>
+        </header>
+
+        <!-- Stats Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass-card p-6 flex items-center gap-5">
+                <div class="p-4 rounded-full bg-green-100 text-3xl">💰</div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Collected (PKR)</p>
+                    <h3 class="text-3xl font-bold text-green-600" id="statTotalAmount">0</h3>
                 </div>
-                <button id="printBtn" class="btn btn-success mt-3 d-none" onclick="window.print()">🖨️ Print QR Sticker</button>
             </div>
-        </div>
-    </div>
-
-    <!-- Live Collection Logs Table -->
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card p-4">
-                <h4 class="card-title mb-3">Recent Collections (Live Data)</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Date & Time</th>
-                                <th>Shop Name</th>
-                                <th>Area</th>
-                                <th>Amount Collected</th>
-                                <th>Collector</th>
-                            </tr>
-                        </thead>
-                        <tbody id="collectionLogs">
-                            <!-- Live data will load here -->
-                        </tbody>
-                    </table>
+            <div class="glass-card p-6 flex items-center gap-5">
+                <div class="p-4 rounded-full bg-blue-100 text-3xl">🏬</div>
+                <div>
+                    <p class="text-sm text-gray-500">Active Shops</p>
+                    <h3 class="text-3xl font-bold text-blue-600" id="statTotalShops">0</h3>
+                </div>
+            </div>
+            <div class="glass-card p-6 flex items-center gap-5">
+                <div class="p-4 rounded-full bg-indigo-100 text-3xl">🛵</div>
+                <div>
+                    <p class="text-sm text-gray-500">Riders Active</p>
+                    <h3 class="text-3xl font-bold text-indigo-600">1</h3>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<script type="module" src="app.js"></script>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Side: Add Shop & QR Preview -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Form Card -->
+                <div class="glass-card p-7">
+                    <h4 class="text-xl font-semibold mb-6 text-gray-800">Add New Shop</h4>
+                    <form id="addShopForm" class="space-y-4">
+                        <input type="text" id="shopName" placeholder="Shop Name" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" required>
+                        <input type="text" id="ownerName" placeholder="Owner Name" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+                        <input type="tel" id="ownerPhone" placeholder="Phone Number (03xxxxxxxxx)" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" required>
+                        <input type="text" id="shopArea" placeholder="Area / Zone (e.g., Lahore)" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" required>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition">Generate Box ID & QR</button>
+                    </form>
+                </div>
+
+                <!-- QR Sticker Preview Card -->
+                <div id="qrPreviewCard" class="glass-card p-6 text-center border-2 border-indigo-100 d-none">
+                    <h4 class="text-lg font-semibold mb-3 text-indigo-800">Box QR Sticker</h4>
+                    <div id="printableArea" class="bg-white p-5 border border-gray-200 rounded-xl shadow-inner inline-block">
+                        <p class="text-xs text-gray-400">DONATION BOX</p>
+                        <h3 id="qrShopTitle" class="font-bold text-lg mb-1"></h3>
+                        <p id="qrShopArea" class="text-sm text-gray-600 mb-2"></p>
+                        <div id="qrcode" class="flex justify-center my-3 p-2 bg-white border border-gray-100"></div>
+                        <small class="text-gray-500 font-mono text-xs">ID: <span id="qrShopId"></span></small>
+                    </div>
+                    <button class="mt-4 text-sm text-indigo-600 hover:underline" onclick="window.print()">🖨️ Print Sticker</button>
+                </div>
+            </div>
+
+            <!-- Right Side: Live Logs Table -->
+            <div class="lg:col-span-2">
+                <div class="glass-card p-7 h-full">
+                    <h4 class="text-xl font-semibold mb-6 text-gray-800">Live Collection Feed</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-sm text-gray-500 border-b border-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4">Timestamp</th>
+                                    <th class="py-3 px-4">Shop</th>
+                                    <th class="py-3 px-4">Area</th>
+                                    <th class="py-3 px-4 text-right">Amount</th>
+                                    <th class="py-3 px-4">Rider</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collectionLogs" class="text-gray-900 text-sm">
+                                <!-- Data populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
 </body>
 </html>
