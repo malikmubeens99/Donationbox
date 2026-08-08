@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisdom Foundation - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .qr-card { text-align: center; padding: 15px; border: 1px dashed #ccc; margin-top: 10px; background: #fff; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea * { visibility: visible; }
+            #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container my-4">
+    <h2 class="mb-4 text-primary font-weight-bold">💚 Wisdom Foundation - Donation Box System</h2>
+
+    <div class="row g-4">
+        <!-- Add New Shop Form -->
+        <div class="col-md-5">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Nai Dukaan Add Karein</h4>
+                <form id="addShopForm">
+                    <div class="mb-3">
+                        <label class="form-label">Shop Name / Dukaan Ka Naam</label>
+                        <input type="text" id="shopName" class="form-control" placeholder="e.g. Bismillah General Store" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Owner Name</label>
+                        <input type="text" id="ownerName" class="form-control" placeholder="e.g. Muhammad Ali">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone / WhatsApp</label>
+                        <input type="text" id="ownerPhone" class="form-control" placeholder="03001234567" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Area / Zone</label>
+                        <input type="text" id="shopArea" class="form-control" placeholder="e.g. Main Market, Lahore" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add Shop & Generate QR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Newly Generated QR Card -->
+        <div class="col-md-7">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Generated QR Code</h4>
+                <div id="printableArea" class="qr-card d-none">
+                    <h3 id="qrShopTitle" class="fw-bold mb-1"></h3>
+                    <p id="qrShopArea" class="text-muted mb-2"></p>
+                    <div id="qrcode" class="d-flex justify-content-center my-3"></div>
+                    <small class="text-secondary">Wisdom Foundation Donation Box #<span id="qrShopId"></span></small>
+                </div>
+                <button id="printBtn" class="btn btn-success mt-3 d-none" onclick="window.print()">🖨️ Print QR Sticker</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Collection Logs Table -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Recent Collections (Live Data)</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Shop Name</th>
+                                <th>Area</th>
+                                <th>Amount Collected</th>
+                                <th>Collector</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collectionLogs">
+                            <!-- Live data will load here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
