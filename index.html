@@ -138,7 +138,57 @@
             </div>
         </div>
 
-        <!-- VIEW 3: ANOMALY & INACTIVE BOXES -->
+        <!-- VIEW 3: ROUTES & RIDERS FLEET (FIXED) -->
+        <div id="viewRiders" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Rider Form -->
+                <div class="lg:col-span-1 erp-card rounded-2xl p-5 border-t-2 border-gold-500">
+                    <h3 class="text-sm font-bold text-white mb-4">➕ Register New Rider</h3>
+                    <form id="addRiderForm" class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">Rider Full Name</label>
+                            <input type="text" id="riderName" placeholder="e.g. Ali Raza" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">Assign 4-Digit PIN Code</label>
+                            <input type="text" id="riderCode" maxlength="4" pattern="\d{4}" placeholder="e.g. 1024" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-gold-500/50 font-mono font-bold text-gold-400 text-sm" required>
+                            <span class="text-[9px] text-gray-500">Rider mobile app par is 4-digit code se login kare ga.</span>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">Phone / WhatsApp</label>
+                            <input type="tel" id="riderPhone" placeholder="03001234567" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">Assigned Route / Market Zone</label>
+                            <input type="text" id="riderArea" placeholder="e.g. Johar Town & Township" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 to-amber-600 font-extrabold text-turkish-900 text-xs shadow-lg">Save Rider Profile</button>
+                    </form>
+                </div>
+
+                <!-- Riders Fleet Directory Table -->
+                <div class="lg:col-span-2 erp-card rounded-2xl p-5">
+                    <h3 class="text-sm font-bold text-white mb-4">🛵 Active Riders Fleet & Daily Routes</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="text-gold-400 border-b border-turkish-800">
+                                    <th class="pb-2">Rider Name</th>
+                                    <th class="pb-2">PIN Code</th>
+                                    <th class="pb-2">Phone</th>
+                                    <th class="pb-2">Assigned Route</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ridersListTable" class="divide-y divide-turkish-800/40">
+                                <!-- Dynamic Rider Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 4: ANOMALY & INACTIVE BOXES -->
         <div id="viewAnalytics" class="space-y-6 hidden">
             <div class="erp-card rounded-2xl p-6 border-l-4 border-rose-500">
                 <h3 class="text-base font-bold text-white mb-2">🚨 Anomaly & Yield Loss Detection Engine</h3>
