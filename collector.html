@@ -3,60 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wisdom Rider Scanner</title>
-    
+    <title>Collector Portal | Wisdom Foundation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #080e10; color: #fff; }
-        #reader { border-radius: 20px; overflow: hidden; border: 2px solid #0f766e; background: #000; }
-        .amount-big { font-size: 36px; color: #f59e0b; text-align: center; font-weight: 800; }
+        body { font-family: sans-serif; background: #080e10; color: #fff; }
+        #reader { border-radius: 16px; overflow: hidden; border: 2px solid #0f766e; }
     </style>
 </head>
-<body class="p-4 min-h-screen flex flex-col justify-between max-w-md mx-auto">
+<body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between">
 
-    <!-- Header -->
-    <header class="flex justify-between items-center py-3 border-b border-gray-800 mb-4">
-        <div class="flex items-center gap-2">
-            <span class="text-2xl">🕌</span>
-            <span class="font-extrabold text-teal-400 tracking-wider">WISDOM RIDER</span>
-        </div>
-        <span class="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full font-bold border border-amber-500/30">Active Shift</span>
+    <header class="flex justify-between items-center py-2 border-b border-gray-800 mb-4">
+        <span class="font-extrabold text-teal-400 text-sm">🛵 WISDOM FLEET APP</span>
+        <span id="riderBadge" class="text-[10px] text-amber-400 font-mono"></span>
     </header>
 
-    <!-- Main Scanner View -->
     <main class="flex-grow flex flex-col justify-center">
         
-        <div id="scannerArea">
-            <div id="reader" class="w-full"></div>
-            <p class="text-center text-xs text-gray-400 mt-4">Box ke QR code ko camera ke samne layein</p>
+        <!-- PIN Verification Screen -->
+        <div id="loginCard" class="bg-gray-900 p-6 rounded-3xl border border-amber-500/40 space-y-4">
+            <h2 class="text-center font-bold text-lg text-amber-400">Rider Login</h2>
+            <input type="text" id="loginPin" maxlength="4" placeholder="Enter 4-Digit PIN" class="w-full text-center py-3 bg-black border border-amber-500 rounded-xl text-2xl font-bold text-amber-400">
+            <button onclick="verifyRiderPin()" class="w-full py-3.5 bg-amber-500 text-black font-extrabold rounded-xl">Verify & Open Scanner</button>
         </div>
 
-        <!-- Hidden Form triggered on Scan -->
-        <div id="collectionFormCard" class="bg-gray-900 border-2 border-teal-600 rounded-3xl p-6 space-y-4 hidden shadow-2xl">
+        <!-- Scanner View -->
+        <div id="scannerSection" class="hidden">
+            <div id="reader"></div>
+            <p class="text-center text-xs text-gray-400 mt-3">Scan Sticker QR Code on Donation Box</p>
+        </div>
+
+        <!-- Entry Form with GPS Verification -->
+        <div id="collectionForm" class="bg-gray-900 p-6 rounded-3xl border border-teal-500 space-y-4 hidden">
             <div class="text-center">
-                <span class="text-xs text-emerald-400 bg-emerald-950 px-3 py-1 rounded-full font-bold">✓ QR Scanned Successfully</span>
-                <h2 id="scannedShopName" class="text-2xl font-black text-white mt-2"></h2>
-                <p id="scannedShopArea" class="text-xs text-gray-400"></p>
+                <h3 id="shopTitle" class="text-xl font-bold text-white"></h3>
+                <p id="shopSub" class="text-xs text-teal-400"></p>
+                <p id="gpsDistanceBadge" class="text-[10px] font-mono mt-1"></p>
             </div>
 
-            <hr class="border-gray-800">
-
-            <form id="submitCollectionForm" class="space-y-4">
+            <form id="entryFormSubmit" class="space-y-3">
                 <input type="hidden" id="scannedShopId">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1 text-center">Collection Amount (PKR)</label>
-                    <input type="number" id="collectionAmount" class="w-full py-3 rounded-2xl bg-black border border-amber-500/50 amount-big focus:outline-none" placeholder="0" required>
+                    <label class="text-[10px] text-gray-400">Collected Amount (PKR)</label>
+                    <input type="number" id="collectedAmount" class="w-full text-center py-3 text-2xl font-bold text-amber-400 bg-black border border-gray-700 rounded-xl" placeholder="0" required>
                 </div>
+
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Rider Name</label>
-                    <input type="text" id="collectorName" class="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 text-white text-sm" placeholder="Apna naam likhein" required>
+                    <label class="text-[10px] text-gray-400">Box Condition</label>
+                    <select id="boxCondition" class="w-full p-2.5 bg-gray-800 border border-gray-700 text-xs text-white rounded-xl">
+                        <option value="Good">🟢 Good / Intact</option>
+                        <option value="Damaged">🟡 Damaged</option>
+                        <option value="NeedsReplacement">🔴 Needs Replacement</option>
+                    </select>
                 </div>
-                <button type="submit" class="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 font-extrabold text-white text-lg rounded-2xl shadow-lg hover:brightness-110 active:scale-95 transition">
-                    Submit Entry
-                </button>
+
+                <div>
+                    <label class="text-[10px] text-gray-400">Photo Proof URL (Optional Cloud/Drive link)</label>
+                    <input type="url" id="photoUrl" placeholder="https://..." class="w-full p-2 bg-gray-800 border border-gray-700 text-xs text-white rounded-xl">
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-teal-600 font-extrabold text-white rounded-xl text-base shadow-lg">Submit Collection</button>
             </form>
         </div>
 
