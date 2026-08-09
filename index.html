@@ -75,11 +75,14 @@
 
             <!-- Navigation Links -->
             <nav class="space-y-3">
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-turkish-700 text-white font-semibold shadow-md border border-turkish-500/30">
-                    <span>📊</span> Dashboard
-                </a>
+                <button onclick="switchTab('dashboard')" id="navDashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-turkish-700 text-white font-semibold shadow-md border border-turkish-500/30 transition">
+                    <span>📊</span> Shops & Collections
+                </button>
+                <button onclick="switchTab('riders')" id="navRiders" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white transition">
+                    <span>🛵</span> Rider Management
+                </button>
                 <a href="collector.html" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white transition">
-                    <span>📱</span> Rider Scanner App
+                    <span>📱</span> Open Scanner Portal
                 </a>
             </nav>
         </div>
@@ -96,8 +99,8 @@
         <!-- Header -->
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h2 class="text-3xl font-extrabold text-white">Donation Box Tracking</h2>
-                <p class="text-sm text-turkish-500">Real-time shop collection & QR management system</p>
+                <h2 id="pageTitle" class="text-3xl font-extrabold text-white">Donation Box Tracking</h2>
+                <p id="pageSubTitle" class="text-sm text-turkish-500">Real-time shop collection & QR management system</p>
             </div>
             <div class="flex items-center gap-3 bg-turkish-800/80 px-4 py-2 rounded-2xl border border-turkish-700">
                 <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -138,126 +141,164 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Add Shop & QR Sticker Preview -->
-            <div class="lg:col-span-1 space-y-6">
-                
-                <!-- Add Form Card -->
-                <div class="turkish-glass rounded-2xl p-6 gold-border-glow">
-                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <span class="text-gold-400">✨</span> Add New Shop Box
-                    </h3>
+        <!-- TAB 1: SHOPS & COLLECTIONS SECTION -->
+        <div id="tabShopsView" class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Add Shop & QR Sticker Preview -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="turkish-glass rounded-2xl p-6 gold-border-glow">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <span class="text-gold-400">✨</span> Add New Shop Box
+                        </h3>
+                        <form id="addShopForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Shop Name</label>
+                                <input type="text" id="shopName" placeholder="e.g. Sultan Sweets & Bakers" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Owner Name</label>
+                                <input type="text" id="ownerName" placeholder="e.g. Chaudhry Usman" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Phone Number</label>
+                                <input type="tel" id="ownerPhone" placeholder="03001234567" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Area / Market Zone</label>
+                                <input type="text" id="shopArea" placeholder="e.g. Main Bazaar Zone-A" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-600 via-gold-500 to-amber-400 text-turkish-900 font-extrabold shadow-lg hover:brightness-110 transition active:scale-98">
+                                Generate & Show QR Code
+                            </button>
+                        </form>
+                    </div>
 
-                    <form id="addShopForm" class="space-y-4">
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Shop Name</label>
-                            <input type="text" id="shopName" placeholder="e.g. Sultan Sweets & Bakers" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white placeholder-gray-500 focus:outline-none focus:border-gold-500 transition" required>
+                    <div id="qrPreviewWrapper" class="turkish-glass rounded-2xl p-6 text-center hidden">
+                        <h4 class="text-sm font-bold text-gold-400 mb-4">PRINT-READY BOX STICKER</h4>
+                        <div id="printableArea" class="bg-white text-gray-900 p-6 rounded-2xl shadow-2xl border-4 border-turkish-700 inline-block w-full">
+                            <div class="border-b-2 border-turkish-700 pb-2 mb-3">
+                                <span class="text-[10px] font-bold tracking-widest text-turkish-700 uppercase">Wisdom Foundation</span>
+                                <h3 id="qrShopTitle" class="font-extrabold text-lg text-gray-900"></h3>
+                                <p id="qrShopArea" class="text-xs text-gray-600 font-semibold"></p>
+                            </div>
+                            <div id="qrcode" class="flex justify-center my-3 p-2 bg-white"></div>
+                            <p class="text-[11px] font-mono font-bold text-gray-500 mt-2">BOX ID: <span id="qrShopId" class="text-turkish-700"></span></p>
                         </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Owner Name</label>
-                            <input type="text" id="ownerName" placeholder="e.g. Chaudhry Usman" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white placeholder-gray-500 focus:outline-none focus:border-gold-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Phone Number</label>
-                            <input type="tel" id="ownerPhone" placeholder="03001234567" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white placeholder-gray-500 focus:outline-none focus:border-gold-500 transition" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Area / Market Zone</label>
-                            <input type="text" id="shopArea" placeholder="e.g. Main Bazaar Zone-A" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white placeholder-gray-500 focus:outline-none focus:border-gold-500 transition" required>
-                        </div>
-
-                        <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-600 via-gold-500 to-amber-400 text-turkish-900 font-extrabold shadow-lg hover:brightness-110 transition active:scale-98">
-                            Generate & Show QR Code
+                        <button onclick="window.print()" class="mt-4 w-full py-2.5 rounded-xl bg-turkish-700 hover:bg-turkish-500 text-white font-bold text-sm transition">
+                            🖨️ Print Sticker Now
                         </button>
-                    </form>
+                    </div>
                 </div>
 
-                <!-- QR Sticker Preview Card -->
-                <div id="qrPreviewWrapper" class="turkish-glass rounded-2xl p-6 text-center hidden">
-                    <h4 class="text-sm font-bold text-gold-400 mb-4">PRINT-READY BOX STICKER</h4>
-                    
-                    <div id="printableArea" class="bg-white text-gray-900 p-6 rounded-2xl shadow-2xl border-4 border-turkish-700 inline-block w-full">
-                        <div class="border-b-2 border-turkish-700 pb-2 mb-3">
-                            <span class="text-[10px] font-bold tracking-widest text-turkish-700 uppercase">Wisdom Foundation</span>
-                            <h3 id="qrShopTitle" class="font-extrabold text-lg text-gray-900"></h3>
-                            <p id="qrShopArea" class="text-xs text-gray-600 font-semibold"></p>
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Live Feed -->
+                    <div class="turkish-glass rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+                            <span>📋 Live Collection Feed</span>
+                            <span class="text-xs font-normal text-turkish-500">Auto-updates from Rider App</span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-xs text-gold-400 border-b border-turkish-800">
+                                        <th class="pb-3 px-3">Date / Time</th>
+                                        <th class="pb-3 px-3">Shop</th>
+                                        <th class="pb-3 px-3">Area</th>
+                                        <th class="pb-3 px-3 text-right">Amount</th>
+                                        <th class="pb-3 px-3 text-right">Rider</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collectionLogs" class="text-sm divide-y divide-turkish-800/50"></tbody>
+                            </table>
                         </div>
-
-                        <!-- QR Container -->
-                        <div id="qrcode" class="flex justify-center my-3 p-2 bg-white"></div>
-
-                        <p class="text-[11px] font-mono font-bold text-gray-500 mt-2">BOX ID: <span id="qrShopId" class="text-turkish-700"></span></p>
                     </div>
 
-                    <button onclick="window.print()" class="mt-4 w-full py-2.5 rounded-xl bg-turkish-700 hover:bg-turkish-500 text-white font-bold text-sm transition">
-                        🖨️ Print Sticker Now
-                    </button>
+                    <!-- Directory -->
+                    <div class="turkish-glass rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+                            <span>🏪 Registered Shops Directory</span>
+                            <span class="text-xs font-normal text-turkish-500">Click shop to view details & QR Code</span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-xs text-gold-400 border-b border-turkish-800">
+                                        <th class="pb-3 px-3">Shop Name</th>
+                                        <th class="pb-3 px-3">Owner</th>
+                                        <th class="pb-3 px-3">Phone</th>
+                                        <th class="pb-3 px-3">Area</th>
+                                        <th class="pb-3 px-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shopsListTable" class="text-sm divide-y divide-turkish-800/50"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-
             </div>
-
-            <!-- Right Side: Recent Activity Table & Directory -->
-            <div class="lg:col-span-2 space-y-8">
-                
-                <div class="turkish-glass rounded-2xl p-6">
-                    <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
-                        <span>📋 Live Collection Feed</span>
-                        <span class="text-xs font-normal text-turkish-500">Auto-updates from Rider App</span>
-                    </h3>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="text-xs text-gold-400 border-b border-turkish-800">
-                                    <th class="pb-3 px-3">Date / Time</th>
-                                    <th class="pb-3 px-3">Shop</th>
-                                    <th class="pb-3 px-3">Area</th>
-                                    <th class="pb-3 px-3 text-right">Amount</th>
-                                    <th class="pb-3 px-3 text-right">Rider</th>
-                                </tr>
-                            </thead>
-                            <tbody id="collectionLogs" class="text-sm divide-y divide-turkish-800/50">
-                                <!-- Dynamic Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Registered Shops Directory -->
-                <div class="turkish-glass rounded-2xl p-6">
-                    <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
-                        <span>🏪 Registered Shops Directory</span>
-                        <span class="text-xs font-normal text-turkish-500">Click shop to view details & QR Code</span>
-                    </h3>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="text-xs text-gold-400 border-b border-turkish-800">
-                                    <th class="pb-3 px-3">Shop Name</th>
-                                    <th class="pb-3 px-3">Owner</th>
-                                    <th class="pb-3 px-3">Phone</th>
-                                    <th class="pb-3 px-3">Area</th>
-                                    <th class="pb-3 px-3 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="shopsListTable" class="text-sm divide-y divide-turkish-800/50">
-                                <!-- Dynamic Shops List -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
         </div>
+
+        <!-- TAB 2: RIDER MANAGEMENT SECTION (NEW) -->
+        <div id="tabRidersView" class="space-y-8 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Add Rider Form -->
+                <div class="lg:col-span-1">
+                    <div class="turkish-glass rounded-2xl p-6 gold-border-glow">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <span class="text-gold-400">➕</span> Add New Rider
+                        </h3>
+                        <form id="addRiderForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Rider Full Name</label>
+                                <input type="text" id="riderName" placeholder="e.g. Ali Raza" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Phone / WhatsApp</label>
+                                <input type="tel" id="riderPhone" placeholder="03001234567" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Assigned Area / Route</label>
+                                <input type="text" id="riderArea" placeholder="e.g. Shahdara & Ravi Road" class="w-full px-4 py-3 rounded-xl bg-turkish-900/90 border border-turkish-700 text-white focus:outline-none focus:border-gold-500 transition" required>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-600 via-gold-500 to-amber-400 text-turkish-900 font-extrabold shadow-lg hover:brightness-110 transition">
+                                Register Rider
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Riders List Directory -->
+                <div class="lg:col-span-2">
+                    <div class="turkish-glass rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+                            <span>🛵 Active Riders Fleet</span>
+                            <span class="text-xs font-normal text-turkish-500">Click rider to view daily collection reports</span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-xs text-gold-400 border-b border-turkish-800">
+                                        <th class="pb-3 px-3">Rider Name</th>
+                                        <th class="pb-3 px-3">Phone</th>
+                                        <th class="pb-3 px-3">Route / Area</th>
+                                        <th class="pb-3 px-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ridersListTable" class="text-sm divide-y divide-turkish-800/50">
+                                    <!-- Dynamic Rider List -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- Shop Details & QR Popup Modal -->
+    <!-- Shop Details Popup Modal -->
     <div id="shopDetailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
         <div class="turkish-glass rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-turkish-500">
-            
             <div class="flex justify-between items-start border-b border-turkish-800 pb-4 mb-4">
                 <div>
                     <span class="text-xs text-gold-400 font-mono" id="modalShopId"></span>
@@ -266,10 +307,7 @@
                 </div>
                 <button onclick="closeShopModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
-
-            <!-- Shop Info + QR Code Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Info Section -->
                 <div class="space-y-4">
                     <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
                         <p class="text-xs text-gray-400">Total Collected</p>
@@ -281,16 +319,12 @@
                         <p id="modalShopPhone" class="text-xs text-turkish-500"></p>
                     </div>
                 </div>
-
-                <!-- Printable QR Code Container -->
                 <div id="modalPrintableArea" class="bg-white text-gray-900 p-4 rounded-2xl shadow-xl text-center flex flex-col items-center justify-center border-2 border-turkish-700">
                     <p class="text-[10px] font-bold text-turkish-700 uppercase tracking-widest mb-1">Wisdom Box Sticker</p>
                     <div id="modalQrcode" class="my-2"></div>
                     <p class="text-[10px] font-mono font-bold text-gray-500" id="modalQrSubtext"></p>
                 </div>
             </div>
-
-            <!-- Collection History Table -->
             <h4 class="text-sm font-bold text-white mb-3">Collection History</h4>
             <div class="overflow-x-auto bg-turkish-900/50 rounded-xl p-3 border border-turkish-800 mb-6">
                 <table class="w-full text-left text-xs">
@@ -301,27 +335,67 @@
                             <th class="pb-2 text-right">Amount</th>
                         </tr>
                     </thead>
-                    <tbody id="modalHistoryTable" class="divide-y divide-turkish-800/40">
-                        <!-- History Rows -->
+                    <tbody id="modalHistoryTable" class="divide-y divide-turkish-800/40"></tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center border-t border-turkish-800 pt-4">
+                <button onclick="deleteCurrentShop()" class="px-4 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition">🗑️ Delete Shop</button>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="px-4 py-2.5 bg-turkish-700 hover:bg-turkish-600 text-white rounded-xl text-xs font-bold transition">🖨️ Print QR Sticker</button>
+                    <button onclick="closeShopModal()" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rider Performance History Popup Modal (NEW) -->
+    <div id="riderDetailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="turkish-glass rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-turkish-500">
+            <div class="flex justify-between items-start border-b border-turkish-800 pb-4 mb-4">
+                <div>
+                    <span class="text-xs text-gold-400 font-mono">RIDER PERFORMANCE RECORD</span>
+                    <h2 id="modalRiderName" class="text-2xl font-black text-white"></h2>
+                    <p id="modalRiderArea" class="text-xs text-turkish-500"></p>
+                </div>
+                <button onclick="closeRiderModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
+                    <p class="text-xs text-gray-400">Total All-Time Collection</p>
+                    <h4 id="modalRiderTotalAmount" class="text-xl font-bold text-gold-400">Rs. 0</h4>
+                </div>
+                <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
+                    <p class="text-xs text-gray-400">Total Visits Conducted</p>
+                    <h4 id="modalRiderTotalVisits" class="text-xl font-bold text-emerald-400">0</h4>
+                </div>
+            </div>
+
+            <!-- Date-wise Breakdown Table -->
+            <h4 class="text-sm font-bold text-white mb-3">Daily Collection History (Date-wise)</h4>
+            <div class="overflow-x-auto bg-turkish-900/50 rounded-xl p-3 border border-turkish-800 mb-6">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-gray-400 border-b border-turkish-800">
+                            <th class="pb-2">Date</th>
+                            <th class="pb-2 text-center">Shops Visited</th>
+                            <th class="pb-2 text-right">Total Collection</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalRiderHistoryTable" class="divide-y divide-turkish-800/40">
+                        <!-- Dynamic Date-wise History -->
                     </tbody>
                 </table>
             </div>
 
-            <!-- Modal Action Buttons (Delete & Print) -->
             <div class="flex justify-between items-center border-t border-turkish-800 pt-4">
-                <button onclick="deleteCurrentShop()" class="px-4 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
-                    🗑️ Delete Shop
+                <button onclick="deleteCurrentRider()" class="px-4 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition">
+                    🗑️ Remove Rider
                 </button>
-                <div class="flex gap-2">
-                    <button onclick="window.print()" class="px-4 py-2.5 bg-turkish-700 hover:bg-turkish-600 text-white rounded-xl text-xs font-bold transition">
-                        🖨️ Print QR Sticker
-                    </button>
-                    <button onclick="closeShopModal()" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold">
-                        Close
-                    </button>
-                </div>
+                <button onclick="closeRiderModal()" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold">
+                    Close
+                </button>
             </div>
-
         </div>
     </div>
 
