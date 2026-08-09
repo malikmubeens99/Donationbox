@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, onSnapshot, query, orderBy, where, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Real Firebase Configuration
 const firebaseConfig = {
@@ -14,6 +14,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+let currentModalShopId = null; // Track active shop in popup
 
 // 1. Add Shop & Generate Box QR Code
 const addShopForm = document.getElementById('addShopForm');
@@ -86,7 +88,7 @@ if (shopsListTable) {
                     <td class="py-3 px-3 text-xs text-gray-400">${shop.area}</td>
                     <td class="py-3 px-3 text-right">
                         <button class="px-3 py-1 bg-turkish-700/60 hover:bg-turkish-600 text-xs text-white rounded-lg border border-turkish-500/30">
-                            View Record ➔
+                            Details & QR ➔
                         </button>
                     </td>
                 </tr>
@@ -136,9 +138,10 @@ if (collectionLogs) {
     });
 }
 
-// 4. Shop Detail Modal Function
+// 4. Shop Detail Modal + Dynamic QR Generator Function
 window.openShopDetails = async (shopId) => {
     try {
+        currentModalShopId = shopId;
         const shopSnap = await getDoc(doc(db, "shops", shopId));
         if (!shopSnap.exists()) return;
         const shop = shopSnap.data();
@@ -148,7 +151,22 @@ window.openShopDetails = async (shopId) => {
         document.getElementById('modalShopArea').innerText = shop.area;
         document.getElementById('modalShopOwner').innerText = shop.owner || 'N/A';
         document.getElementById('modalShopPhone').innerText = shop.phone;
+        document.getElementById('modalQrSubtext').innerText = `ID: ${shopId}`;
 
+        // Render QR Code inside Modal
+        const modalQrContainer = document.getElementById("modalQrcode");
+        modalQrContainer.innerHTML = "";
+
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(modalQrContainer, { text: shopId, width: 140, height: 140 });
+        } else {
+            const img = document.createElement('img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${shopId}`;
+            img.className = "mx-auto";
+            modalQrContainer.appendChild(img);
+        }
+
+        // Fetch collections for this specific shop
         const qHistory = query(collection(db, "collections"), where("shopId", "==", shopId));
         const historySnap = await getDocs(qHistory);
 
@@ -182,6 +200,24 @@ window.openShopDetails = async (shopId) => {
     }
 };
 
+// 5. Delete Shop Function
+window.deleteCurrentShop = async () => {
+    if (!currentModalShopId) return;
+    
+    const confirmDelete = confirm("Kya aap waqai is dukaan ko delete karna chahte hain? Database se is shop ka record khatam ho jaye ga.");
+    
+    if (confirmDelete) {
+        try {
+            await deleteDoc(doc(db, "shops", currentModalShopId));
+            alert("✅ Shop database se successfully delete ho gayi!");
+            closeShopModal();
+        } catch (error) {
+            alert("Error deleting shop: " + error.message);
+        }
+    }
+};
+
 window.closeShopModal = () => {
     document.getElementById('shopDetailModal').classList.add('hidden');
+    currentModalShopId = null;
 };
