@@ -15,8 +15,13 @@
 
     <!-- Header -->
     <header class="flex justify-between items-center py-2 border-b border-gray-800 mb-4">
-        <span class="font-extrabold text-teal-400 text-sm">🛵 WISDOM FLEET APP</span>
-        <span id="riderBadge" class="text-[10px] text-amber-400 font-mono"></span>
+        <div>
+            <span class="font-extrabold text-teal-400 text-sm block">🛵 WISDOM FLEET APP</span>
+            <span id="riderBadge" class="text-[10px] text-amber-400 font-mono"></span>
+        </div>
+        <button id="logoutBtn" onclick="logoutRider()" class="text-[11px] bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 px-3 py-1 rounded-xl font-bold transition hidden">
+            Logout 🚪
+        </button>
     </header>
 
     <main class="flex-grow flex flex-col justify-center">
@@ -24,8 +29,9 @@
         <!-- PIN Verification Screen -->
         <div id="loginCard" class="bg-gray-900 p-6 rounded-3xl border border-amber-500/40 space-y-4">
             <h2 class="text-center font-bold text-lg text-amber-400">Rider Login</h2>
+            <p class="text-[11px] text-gray-400 text-center">Apna 4-Digit PIN Code Enter Karein (Only 1-Time Verification)</p>
             <input type="text" id="loginPin" maxlength="4" placeholder="Enter 4-Digit PIN" class="w-full text-center py-3 bg-black border border-amber-500 rounded-xl text-2xl font-bold text-amber-400 focus:outline-none">
-            <button onclick="verifyRiderPin()" class="w-full py-3.5 bg-amber-500 text-black font-extrabold rounded-xl active:scale-95 transition">Verify & Open Scanner</button>
+            <button onclick="verifyRiderPin()" class="w-full py-3.5 bg-amber-500 text-black font-extrabold rounded-xl active:scale-95 transition">Verify & Save Session</button>
         </div>
 
         <!-- Scanner View -->
@@ -34,7 +40,7 @@
             <p class="text-center text-xs text-gray-400 mt-3">Scan Sticker QR Code on Donation Box</p>
         </div>
 
-        <!-- Entry Form (Simple & Instant) -->
+        <!-- Entry Form -->
         <div id="collectionForm" class="bg-gray-900 p-6 rounded-3xl border border-teal-500 space-y-4 hidden">
             <div class="text-center">
                 <span class="text-xs text-emerald-400 font-bold bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">✓ QR Code Scanned</span>
