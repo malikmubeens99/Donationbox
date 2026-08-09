@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase Configuration
+// Real Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD1Lz7uDui4928S-m1AlTTtPCuBcp-U4Sw",
   authDomain: "donationbox-8e697.firebaseapp.com",
@@ -15,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 1. Add Shop & Generate QR Code
+// 1. Add Shop & Generate Box QR Code
 const addShopForm = document.getElementById('addShopForm');
 if (addShopForm) {
     addShopForm.addEventListener('submit', async (e) => {
@@ -62,7 +62,7 @@ if (addShopForm) {
     });
 }
 
-// 2. Fetch & Display All Registered Shops
+// 2. Fetch & Display All Registered Shops List
 const shopsListTable = document.getElementById('shopsListTable');
 if (shopsListTable) {
     const qShops = query(collection(db, "shops"), orderBy("createdAt", "desc"));
@@ -99,7 +99,7 @@ if (shopsListTable) {
     });
 }
 
-// 3. Live Recent Collection Feed
+// 3. Live Collection Logs Feed
 const collectionLogs = document.getElementById('collectionLogs');
 if (collectionLogs) {
     const qCollections = query(collection(db, "collections"), orderBy("timestamp", "desc"));
@@ -136,10 +136,9 @@ if (collectionLogs) {
     });
 }
 
-// 4. Shop Detail Modal Function (Global Scope)
+// 4. Shop Detail Modal Function
 window.openShopDetails = async (shopId) => {
     try {
-        // Fetch Shop Doc
         const shopSnap = await getDoc(doc(db, "shops", shopId));
         if (!shopSnap.exists()) return;
         const shop = shopSnap.data();
@@ -150,7 +149,6 @@ window.openShopDetails = async (shopId) => {
         document.getElementById('modalShopOwner').innerText = shop.owner || 'N/A';
         document.getElementById('modalShopPhone').innerText = shop.phone;
 
-        // Fetch collections for this specific shop
         const qHistory = query(collection(db, "collections"), where("shopId", "==", shopId));
         const historySnap = await getDocs(qHistory);
 
