@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Aap ki Real Firebase Configuration (donationbox-8e697)
+// Real Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD1Lz7uDui4928S-m1AlTTtPCuBcp-U4Sw",
   authDomain: "donationbox-8e697.firebaseapp.com",
@@ -12,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-RS2FQ425S0"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -27,7 +26,6 @@ function onScanSuccess(decodedText) {
     });
 }
 
-// Start Camera Stream
 html5QrCode.start(
     { facingMode: "environment" }, 
     { fps: 10, qrbox: { width: 220, height: 220 } }, 
@@ -48,7 +46,6 @@ async function loadShopDetails(shopId) {
             document.getElementById('scannedShopName').innerText = data.name;
             document.getElementById('scannedShopArea').innerText = data.area;
             
-            // Switch UI: Hide Scanner, Show Collection Form
             document.getElementById('scannerArea').classList.add('hidden');
             document.getElementById('collectionFormCard').classList.remove('hidden');
         } else {
