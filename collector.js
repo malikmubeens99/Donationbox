@@ -28,9 +28,23 @@ const db = getFirestore(app);
 let currentRider = null;
 
 // ==========================================
-// 1. PIN VERIFICATION & SESSION
+// 1. AUTO-LOGIN CHECK ON LOAD (LOCALSTORAGE)
 // ==========================================
 
+window.addEventListener('DOMContentLoaded', () => {
+    const savedSession = localStorage.getItem('wisdom_rider_session');
+    
+    if (savedSession) {
+        try {
+            currentRider = JSON.parse(savedSession);
+            launchRiderScanner();
+        } catch (e) {
+            localStorage.removeItem('wisdom_rider_session');
+        }
+    }
+});
+
+// Manual Verification (First Time)
 window.verifyRiderPin = async () => {
     const pin = document.getElementById('loginPin').value.trim();
     if (!pin) {
@@ -47,17 +61,39 @@ window.verifyRiderPin = async () => {
             return;
         }
 
-        currentRider = snap.docs[0].data();
+        const riderData = snap.docs[0].data();
+        currentRider = {
+            id: snap.docs[0].id,
+            name: riderData.name,
+            code: riderData.code,
+            area: riderData.area
+        };
         
-        // Hide Login & Show Camera Scanner
-        document.getElementById('loginCard').classList.add('hidden');
-        document.getElementById('scannerSection').classList.remove('hidden');
-        document.getElementById('riderBadge').innerText = `Rider: ${currentRider.name} (#${currentRider.code})`;
-
-        startCameraScanner();
+        // Save Session Permanently to Device
+        localStorage.setItem('wisdom_rider_session', JSON.stringify(currentRider));
+        
+        launchRiderScanner();
 
     } catch (err) {
         alert("Login Error: " + err.message);
+    }
+};
+
+// Launch Camera Screen
+function launchRiderScanner() {
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('scannerSection').classList.remove('hidden');
+    document.getElementById('riderBadge').innerText = `Rider: ${currentRider.name} (#${currentRider.code})`;
+    document.getElementById('logoutBtn')?.classList.remove('hidden');
+
+    startCameraScanner();
+}
+
+// Logout Action
+window.logoutRider = () => {
+    if (confirm("Kya aap logout karna chahte hain? Next time dobara PIN enter karna pare ga.")) {
+        localStorage.removeItem('wisdom_rider_session');
+        location.reload();
     }
 };
 
@@ -82,7 +118,7 @@ function startCameraScanner() {
 }
 
 // ==========================================
-// 3. INSTANT SHOP DETECTOR (NO GPS)
+// 3. INSTANT SHOP DETECTOR
 // ==========================================
 
 async function loadShopForCollection(scannedText) {
@@ -90,14 +126,14 @@ async function loadShopForCollection(scannedText) {
         let shopData = null;
         let shopDocId = null;
 
-        // Step A: Direct Search by Shop Document ID
+        // Step A: Search by Shop Document ID
         const directDocSnap = await getDoc(doc(db, "shops", scannedText));
 
         if (directDocSnap.exists()) {
             shopData = directDocSnap.data();
             shopDocId = directDocSnap.id;
         } else {
-            // Step B: Search Donation Boxes Collection by Box ID (e.g., BOX-XXXXX)
+            // Step B: Search by Box Asset ID (e.g. BOX-XXXXX)
             const boxQuery = query(collection(db, "donationBoxes"), where("boxId", "==", scannedText));
             const boxSnap = await getDocs(boxQuery);
 
@@ -120,12 +156,12 @@ async function loadShopForCollection(scannedText) {
             return;
         }
 
-        // Populate Form Data
+        // Populate Form
         document.getElementById('scannedShopId').value = shopDocId;
         document.getElementById('shopTitle').innerText = shopData.name;
         document.getElementById('shopSub').innerText = shopData.area;
 
-        // Switch Screen to Entry Form Instantly
+        // Switch to Entry Form
         document.getElementById('scannerSection').classList.add('hidden');
         document.getElementById('collectionForm').classList.remove('hidden');
 
@@ -151,7 +187,8 @@ if (entryFormSubmit) {
         }
 
         if (!currentRider) {
-            alert("Rider Session Expired! Please Re-verify PIN.");
+            alert("Session Expired! Please Re-verify PIN.");
+            localStorage.removeItem('wisdom_rider_session');
             location.reload();
             return;
         }
