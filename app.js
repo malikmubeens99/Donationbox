@@ -1,21 +1,24 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// Aap ki Real Firebase Configuration (donationbox-8e697)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD1Lz7uDui4928S-m1AlTTtPCuBcp-U4Sw",
+  authDomain: "donationbox-8e697.firebaseapp.com",
+  projectId: "donationbox-8e697",
+  storageBucket: "donationbox-8e697.firebasestorage.app",
+  messagingSenderId: "130828492156",
+  appId: "1:130828492156:web:a3e2fb5ae1b260a04d18f9",
+  measurementId: "G-RS2FQ425S0"
 };
 
+// Initialize Firebase & Firestore Database
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Add Shop & Generate QR
+// Add Shop & Generate Box QR Code
 const addShopForm = document.getElementById('addShopForm');
-if(addShopForm) {
+if (addShopForm) {
     addShopForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -25,6 +28,7 @@ if(addShopForm) {
         const shopArea = document.getElementById('shopArea').value;
 
         try {
+            // Save shop to Firestore
             const docRef = await addDoc(collection(db, "shops"), {
                 name: shopName,
                 owner: ownerName,
@@ -35,16 +39,16 @@ if(addShopForm) {
 
             const shopId = docRef.id;
 
-            // Update UI Details
+            // Update UI Sticker Preview
             document.getElementById('qrShopTitle').innerText = shopName;
             document.getElementById('qrShopArea').innerText = shopArea;
             document.getElementById('qrShopId').innerText = shopId;
             
-            // Clean old QR if any
+            // Clear previous QR
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = "";
 
-            // Render QR Code safely
+            // Render QR Code (with API Fallback)
             if (typeof QRCode !== 'undefined') {
                 new QRCode(qrContainer, {
                     text: shopId,
@@ -52,14 +56,13 @@ if(addShopForm) {
                     height: 160
                 });
             } else {
-                // Reliable Fallback via Image API
                 const img = document.createElement('img');
                 img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${shopId}`;
                 img.className = "mx-auto";
                 qrContainer.appendChild(img);
             }
 
-            // Fix Tailwind Class toggle
+            // Show QR Card
             document.getElementById('qrPreviewWrapper').classList.remove('hidden');
             addShopForm.reset();
 
@@ -69,15 +72,14 @@ if(addShopForm) {
     });
 }
 
-// Live Feed Sync
+// Real-time Live Collections Feed
 const collectionLogs = document.getElementById('collectionLogs');
-if(collectionLogs) {
+if (collectionLogs) {
     const q = query(collection(db, "collections"), orderBy("timestamp", "desc"));
-    let totalAmount = 0;
     
     onSnapshot(q, (snapshot) => {
         collectionLogs.innerHTML = "";
-        totalAmount = 0;
+        let totalAmount = 0;
         let count = 0;
 
         snapshot.forEach((doc) => {
@@ -98,7 +100,11 @@ if(collectionLogs) {
             `;
         });
 
-        document.getElementById('statTotalAmount').innerText = `Rs. ${totalAmount.toLocaleString()}`;
-        document.getElementById('statTotalVisits').innerText = count;
+        if (document.getElementById('statTotalAmount')) {
+            document.getElementById('statTotalAmount').innerText = `Rs. ${totalAmount.toLocaleString()}`;
+        }
+        if (document.getElementById('statTotalVisits')) {
+            document.getElementById('statTotalVisits').innerText = count;
+        }
     });
 }
