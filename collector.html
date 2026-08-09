@@ -13,6 +13,7 @@
 </head>
 <body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between">
 
+    <!-- Header -->
     <header class="flex justify-between items-center py-2 border-b border-gray-800 mb-4">
         <span class="font-extrabold text-teal-400 text-sm">🛵 WISDOM FLEET APP</span>
         <span id="riderBadge" class="text-[10px] text-amber-400 font-mono"></span>
@@ -23,8 +24,8 @@
         <!-- PIN Verification Screen -->
         <div id="loginCard" class="bg-gray-900 p-6 rounded-3xl border border-amber-500/40 space-y-4">
             <h2 class="text-center font-bold text-lg text-amber-400">Rider Login</h2>
-            <input type="text" id="loginPin" maxlength="4" placeholder="Enter 4-Digit PIN" class="w-full text-center py-3 bg-black border border-amber-500 rounded-xl text-2xl font-bold text-amber-400">
-            <button onclick="verifyRiderPin()" class="w-full py-3.5 bg-amber-500 text-black font-extrabold rounded-xl">Verify & Open Scanner</button>
+            <input type="text" id="loginPin" maxlength="4" placeholder="Enter 4-Digit PIN" class="w-full text-center py-3 bg-black border border-amber-500 rounded-xl text-2xl font-bold text-amber-400 focus:outline-none">
+            <button onclick="verifyRiderPin()" class="w-full py-3.5 bg-amber-500 text-black font-extrabold rounded-xl active:scale-95 transition">Verify & Open Scanner</button>
         </div>
 
         <!-- Scanner View -->
@@ -33,36 +34,31 @@
             <p class="text-center text-xs text-gray-400 mt-3">Scan Sticker QR Code on Donation Box</p>
         </div>
 
-        <!-- Entry Form with GPS Verification -->
+        <!-- Entry Form (Simplified) -->
         <div id="collectionForm" class="bg-gray-900 p-6 rounded-3xl border border-teal-500 space-y-4 hidden">
             <div class="text-center">
-                <h3 id="shopTitle" class="text-xl font-bold text-white"></h3>
+                <span class="text-xs text-emerald-400 font-bold bg-emerald-950 px-3 py-1 rounded-full border border-emerald-800">✓ QR Code Scanned</span>
+                <h3 id="shopTitle" class="text-xl font-bold text-white mt-2"></h3>
                 <p id="shopSub" class="text-xs text-teal-400"></p>
-                <p id="gpsDistanceBadge" class="text-[10px] font-mono mt-1"></p>
             </div>
 
-            <form id="entryFormSubmit" class="space-y-3">
+            <form id="entryFormSubmit" class="space-y-4">
                 <input type="hidden" id="scannedShopId">
                 <div>
-                    <label class="text-[10px] text-gray-400">Collected Amount (PKR)</label>
-                    <input type="number" id="collectedAmount" class="w-full text-center py-3 text-2xl font-bold text-amber-400 bg-black border border-gray-700 rounded-xl" placeholder="0" required>
+                    <label class="text-[11px] text-gray-400 block mb-1">Collected Amount (PKR)</label>
+                    <input type="number" id="collectedAmount" class="w-full text-center py-3.5 text-3xl font-bold text-amber-400 bg-black border border-amber-500/50 rounded-2xl focus:outline-none" placeholder="0" required>
                 </div>
 
                 <div>
-                    <label class="text-[10px] text-gray-400">Box Condition</label>
-                    <select id="boxCondition" class="w-full p-2.5 bg-gray-800 border border-gray-700 text-xs text-white rounded-xl">
+                    <label class="text-[11px] text-gray-400 block mb-1">Box Condition</label>
+                    <select id="boxCondition" class="w-full p-3 bg-gray-800 border border-gray-700 text-xs text-white rounded-xl focus:outline-none">
                         <option value="Good">🟢 Good / Intact</option>
                         <option value="Damaged">🟡 Damaged</option>
                         <option value="NeedsReplacement">🔴 Needs Replacement</option>
                     </select>
                 </div>
 
-                <div>
-                    <label class="text-[10px] text-gray-400">Photo Proof URL (Optional Cloud/Drive link)</label>
-                    <input type="url" id="photoUrl" placeholder="https://..." class="w-full p-2 bg-gray-800 border border-gray-700 text-xs text-white rounded-xl">
-                </div>
-
-                <button type="submit" class="w-full py-4 bg-teal-600 font-extrabold text-white rounded-xl text-base shadow-lg">Submit Collection</button>
+                <button type="submit" class="w-full py-4 bg-teal-600 font-extrabold text-white rounded-2xl text-base shadow-lg active:scale-95 transition">Submit Collection</button>
             </form>
         </div>
 
