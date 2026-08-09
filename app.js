@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Aap ki Real Firebase Configuration (donationbox-8e697)
+// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD1Lz7uDui4928S-m1AlTTtPCuBcp-U4Sw",
   authDomain: "donationbox-8e697.firebaseapp.com",
@@ -12,11 +12,10 @@ const firebaseConfig = {
   measurementId: "G-RS2FQ425S0"
 };
 
-// Initialize Firebase & Firestore Database
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Add Shop & Generate Box QR Code
+// 1. Add Shop & Generate QR Code
 const addShopForm = document.getElementById('addShopForm');
 if (addShopForm) {
     addShopForm.addEventListener('submit', async (e) => {
@@ -28,7 +27,6 @@ if (addShopForm) {
         const shopArea = document.getElementById('shopArea').value;
 
         try {
-            // Save shop to Firestore
             const docRef = await addDoc(collection(db, "shops"), {
                 name: shopName,
                 owner: ownerName,
@@ -39,22 +37,15 @@ if (addShopForm) {
 
             const shopId = docRef.id;
 
-            // Update UI Sticker Preview
             document.getElementById('qrShopTitle').innerText = shopName;
             document.getElementById('qrShopArea').innerText = shopArea;
             document.getElementById('qrShopId').innerText = shopId;
             
-            // Clear previous QR
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = "";
 
-            // Render QR Code (with API Fallback)
             if (typeof QRCode !== 'undefined') {
-                new QRCode(qrContainer, {
-                    text: shopId,
-                    width: 160,
-                    height: 160
-                });
+                new QRCode(qrContainer, { text: shopId, width: 160, height: 160 });
             } else {
                 const img = document.createElement('img');
                 img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${shopId}`;
@@ -62,7 +53,6 @@ if (addShopForm) {
                 qrContainer.appendChild(img);
             }
 
-            // Show QR Card
             document.getElementById('qrPreviewWrapper').classList.remove('hidden');
             addShopForm.reset();
 
@@ -72,18 +62,55 @@ if (addShopForm) {
     });
 }
 
-// Real-time Live Collections Feed
+// 2. Fetch & Display All Registered Shops
+const shopsListTable = document.getElementById('shopsListTable');
+if (shopsListTable) {
+    const qShops = query(collection(db, "shops"), orderBy("createdAt", "desc"));
+    
+    onSnapshot(qShops, (snapshot) => {
+        shopsListTable.innerHTML = "";
+        let shopCount = 0;
+
+        snapshot.forEach((docSnap) => {
+            shopCount++;
+            const shop = docSnap.data();
+            const id = docSnap.id;
+
+            shopsListTable.innerHTML += `
+                <tr class="hover:bg-turkish-800/40 transition cursor-pointer" onclick="openShopDetails('${id}')">
+                    <td class="py-3 px-3 font-bold text-white flex items-center gap-2">
+                        <span class="text-xs text-gold-400">🏪</span> ${shop.name}
+                    </td>
+                    <td class="py-3 px-3 text-xs text-gray-300">${shop.owner || 'N/A'}</td>
+                    <td class="py-3 px-3 text-xs text-turkish-500">${shop.phone}</td>
+                    <td class="py-3 px-3 text-xs text-gray-400">${shop.area}</td>
+                    <td class="py-3 px-3 text-right">
+                        <button class="px-3 py-1 bg-turkish-700/60 hover:bg-turkish-600 text-xs text-white rounded-lg border border-turkish-500/30">
+                            View Record ➔
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        if (document.getElementById('statTotalShops')) {
+            document.getElementById('statTotalShops').innerText = shopCount;
+        }
+    });
+}
+
+// 3. Live Recent Collection Feed
 const collectionLogs = document.getElementById('collectionLogs');
 if (collectionLogs) {
-    const q = query(collection(db, "collections"), orderBy("timestamp", "desc"));
+    const qCollections = query(collection(db, "collections"), orderBy("timestamp", "desc"));
     
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(qCollections, (snapshot) => {
         collectionLogs.innerHTML = "";
         let totalAmount = 0;
         let count = 0;
 
-        snapshot.forEach((doc) => {
-            const data = doc.data();
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
             totalAmount += Number(data.amount || 0);
             count++;
 
@@ -108,3 +135,55 @@ if (collectionLogs) {
         }
     });
 }
+
+// 4. Shop Detail Modal Function (Global Scope)
+window.openShopDetails = async (shopId) => {
+    try {
+        // Fetch Shop Doc
+        const shopSnap = await getDoc(doc(db, "shops", shopId));
+        if (!shopSnap.exists()) return;
+        const shop = shopSnap.data();
+
+        document.getElementById('modalShopId').innerText = `BOX ID: ${shopId}`;
+        document.getElementById('modalShopName').innerText = shop.name;
+        document.getElementById('modalShopArea').innerText = shop.area;
+        document.getElementById('modalShopOwner').innerText = shop.owner || 'N/A';
+        document.getElementById('modalShopPhone').innerText = shop.phone;
+
+        // Fetch collections for this specific shop
+        const qHistory = query(collection(db, "collections"), where("shopId", "==", shopId));
+        const historySnap = await getDocs(qHistory);
+
+        const historyTable = document.getElementById('modalHistoryTable');
+        historyTable.innerHTML = "";
+        let shopTotal = 0;
+
+        if (historySnap.empty) {
+            historyTable.innerHTML = `<tr><td colspan="3" class="py-3 text-center text-gray-500">Is dukaan se abhi koi collection nahi hui.</td></tr>`;
+        } else {
+            historySnap.forEach((docSnap) => {
+                const item = docSnap.data();
+                shopTotal += Number(item.amount || 0);
+                const date = item.timestamp ? new Date(item.timestamp.toDate()).toLocaleDateString('en-PK') : 'N/A';
+
+                historyTable.innerHTML += `
+                    <tr class="py-2">
+                        <td class="py-2 text-gray-300">${date}</td>
+                        <td class="py-2 text-gray-400">${item.collectorName}</td>
+                        <td class="py-2 text-right font-bold text-amber-400">Rs. ${item.amount}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('modalShopTotal').innerText = `Rs. ${shopTotal.toLocaleString()}`;
+        document.getElementById('shopDetailModal').classList.remove('hidden');
+
+    } catch (err) {
+        alert("Error fetching shop history: " + err.message);
+    }
+};
+
+window.closeShopModal = () => {
+    document.getElementById('shopDetailModal').classList.add('hidden');
+};
