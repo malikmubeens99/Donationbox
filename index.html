@@ -52,8 +52,8 @@
 
         @media print {
             body * { visibility: hidden; }
-            #printableArea, #printableArea * { visibility: visible; }
-            #printableArea { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
+            #printableArea, #printableArea *, #modalPrintableArea, #modalPrintableArea * { visibility: visible; }
+            #printableArea, #modalPrintableArea { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
         }
     </style>
 </head>
@@ -197,7 +197,7 @@
 
             </div>
 
-            <!-- Right Side: Recent Collection Activity Table -->
+            <!-- Right Side: Recent Activity Table & Directory -->
             <div class="lg:col-span-2 space-y-8">
                 
                 <div class="turkish-glass rounded-2xl p-6">
@@ -228,7 +228,7 @@
                 <div class="turkish-glass rounded-2xl p-6">
                     <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
                         <span>🏪 Registered Shops Directory</span>
-                        <span class="text-xs font-normal text-turkish-500">Click shop to view complete record</span>
+                        <span class="text-xs font-normal text-turkish-500">Click shop to view details & QR Code</span>
                     </h3>
 
                     <div class="overflow-x-auto">
@@ -254,9 +254,10 @@
         </div>
     </main>
 
-    <!-- Shop Details Popup Modal -->
+    <!-- Shop Details & QR Popup Modal -->
     <div id="shopDetailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
         <div class="turkish-glass rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-turkish-500">
+            
             <div class="flex justify-between items-start border-b border-turkish-800 pb-4 mb-4">
                 <div>
                     <span class="text-xs text-gold-400 font-mono" id="modalShopId"></span>
@@ -266,18 +267,30 @@
                 <button onclick="closeShopModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
-                    <p class="text-xs text-gray-400">Total Collected</p>
-                    <h4 id="modalShopTotal" class="text-xl font-bold text-gold-400">Rs. 0</h4>
+            <!-- Shop Info + QR Code Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Info Section -->
+                <div class="space-y-4">
+                    <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
+                        <p class="text-xs text-gray-400">Total Collected</p>
+                        <h4 id="modalShopTotal" class="text-xl font-bold text-gold-400">Rs. 0</h4>
+                    </div>
+                    <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
+                        <p class="text-xs text-gray-400">Owner Contact</p>
+                        <h4 id="modalShopOwner" class="text-sm font-bold text-white"></h4>
+                        <p id="modalShopPhone" class="text-xs text-turkish-500"></p>
+                    </div>
                 </div>
-                <div class="bg-turkish-900/80 p-4 rounded-xl border border-turkish-800">
-                    <p class="text-xs text-gray-400">Owner Contact</p>
-                    <h4 id="modalShopOwner" class="text-sm font-bold text-white"></h4>
-                    <p id="modalShopPhone" class="text-xs text-turkish-500"></p>
+
+                <!-- Printable QR Code Container -->
+                <div id="modalPrintableArea" class="bg-white text-gray-900 p-4 rounded-2xl shadow-xl text-center flex flex-col items-center justify-center border-2 border-turkish-700">
+                    <p class="text-[10px] font-bold text-turkish-700 uppercase tracking-widest mb-1">Wisdom Box Sticker</p>
+                    <div id="modalQrcode" class="my-2"></div>
+                    <p class="text-[10px] font-mono font-bold text-gray-500" id="modalQrSubtext"></p>
                 </div>
             </div>
 
+            <!-- Collection History Table -->
             <h4 class="text-sm font-bold text-white mb-3">Collection History</h4>
             <div class="overflow-x-auto bg-turkish-900/50 rounded-xl p-3 border border-turkish-800 mb-6">
                 <table class="w-full text-left text-xs">
@@ -294,9 +307,21 @@
                 </table>
             </div>
 
-            <div class="flex justify-end gap-3">
-                <button onclick="closeShopModal()" class="px-4 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-bold">Close</button>
+            <!-- Modal Action Buttons (Delete & Print) -->
+            <div class="flex justify-between items-center border-t border-turkish-800 pt-4">
+                <button onclick="deleteCurrentShop()" class="px-4 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    🗑️ Delete Shop
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="px-4 py-2.5 bg-turkish-700 hover:bg-turkish-600 text-white rounded-xl text-xs font-bold transition">
+                        🖨️ Print QR Sticker
+                    </button>
+                    <button onclick="closeShopModal()" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold">
+                        Close
+                    </button>
+                </div>
             </div>
+
         </div>
     </div>
 
