@@ -15,7 +15,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentModalShopId = null; // Track active shop in popup
+let currentModalShopId = null;
+let currentModalRiderId = null;
+
+// Tab Switcher Function
+window.switchTab = (tab) => {
+    const shopsView = document.getElementById('tabShopsView');
+    const ridersView = document.getElementById('tabRidersView');
+    const navShops = document.getElementById('navDashboard');
+    const navRiders = document.getElementById('navRiders');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubTitle = document.getElementById('pageSubTitle');
+
+    if (tab === 'dashboard') {
+        shopsView.classList.remove('hidden');
+        ridersView.classList.add('hidden');
+        navShops.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-turkish-700 text-white font-semibold shadow-md border border-turkish-500/30 transition";
+        navRiders.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white transition";
+        pageTitle.innerText = "Donation Box Tracking";
+        pageSubTitle.innerText = "Real-time shop collection & QR management system";
+    } else {
+        shopsView.classList.add('hidden');
+        ridersView.classList.remove('hidden');
+        navRiders.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-turkish-700 text-white font-semibold shadow-md border border-turkish-500/30 transition";
+        navShops.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white transition";
+        pageTitle.innerText = "Rider Fleet Management";
+        pageSubTitle.innerText = "Track rider performance, daily collections, and visits";
+    }
+};
 
 // 1. Add Shop & Generate Box QR Code
 const addShopForm = document.getElementById('addShopForm');
@@ -138,7 +165,142 @@ if (collectionLogs) {
     });
 }
 
-// 4. Shop Detail Modal + Dynamic QR Generator Function
+// 4. ADD RIDER & DISPLAY RIDERS FLEET (NEW)
+const addRiderForm = document.getElementById('addRiderForm');
+if (addRiderForm) {
+    addRiderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('riderName').value;
+        const phone = document.getElementById('riderPhone').value;
+        const area = document.getElementById('riderArea').value;
+
+        try {
+            await addDoc(collection(db, "riders"), {
+                name: name,
+                phone: phone,
+                area: area,
+                createdAt: serverTimestamp()
+            });
+
+            alert("✅ Rider successfully registered!");
+            addRiderForm.reset();
+        } catch (err) {
+            alert("Error registering rider: " + err.message);
+        }
+    });
+}
+
+const ridersListTable = document.getElementById('ridersListTable');
+if (ridersListTable) {
+    const qRiders = query(collection(db, "riders"), orderBy("createdAt", "desc"));
+    
+    onSnapshot(qRiders, (snapshot) => {
+        ridersListTable.innerHTML = "";
+        
+        snapshot.forEach((docSnap) => {
+            const rider = docSnap.data();
+            const id = docSnap.id;
+
+            ridersListTable.innerHTML += `
+                <tr class="hover:bg-turkish-800/40 transition cursor-pointer" onclick="openRiderDetails('${id}', '${rider.name}')">
+                    <td class="py-3 px-3 font-bold text-white flex items-center gap-2">
+                        <span class="text-xs text-gold-400">🛵</span> ${rider.name}
+                    </td>
+                    <td class="py-3 px-3 text-xs text-turkish-500">${rider.phone}</td>
+                    <td class="py-3 px-3 text-xs text-gray-400">${rider.area}</td>
+                    <td class="py-3 px-3 text-right">
+                        <button class="px-3 py-1 bg-turkish-700/60 hover:bg-turkish-600 text-xs text-white rounded-lg border border-turkish-500/30">
+                            Daily Report ➔
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    });
+}
+
+// 5. RIDER PERFORMANCE HISTORY MODAL (Date-Wise Summary)
+window.openRiderDetails = async (riderId, riderName) => {
+    try {
+        currentModalRiderId = riderId;
+        const riderSnap = await getDoc(doc(db, "riders", riderId));
+        if (!riderSnap.exists()) return;
+        const rider = riderSnap.data();
+
+        document.getElementById('modalRiderName').innerText = rider.name;
+        document.getElementById('modalRiderArea').innerText = `Assigned Route: ${rider.area} | ${rider.phone}`;
+
+        // Query all collections done by this rider (by Name match)
+        const qHistory = query(collection(db, "collections"), where("collectorName", "==", rider.name));
+        const historySnap = await getDocs(qHistory);
+
+        const historyTable = document.getElementById('modalRiderHistoryTable');
+        historyTable.innerHTML = "";
+
+        let grandTotalAmount = 0;
+        let grandTotalVisits = 0;
+        const dateMap = {}; // Group by date string: 'YYYY-MM-DD'
+
+        if (historySnap.empty) {
+            historyTable.innerHTML = `<tr><td colspan="3" class="py-3 text-center text-gray-500">Is rider ki koi collection history nahi mili.</td></tr>`;
+        } else {
+            historySnap.forEach((docSnap) => {
+                const item = docSnap.data();
+                const amt = Number(item.amount || 0);
+                grandTotalAmount += amt;
+                grandTotalVisits++;
+
+                const dateStr = item.timestamp ? new Date(item.timestamp.toDate()).toLocaleDateString('en-PK') : 'Unknown Date';
+
+                if (!dateMap[dateStr]) {
+                    dateMap[dateStr] = { visits: 0, amount: 0 };
+                }
+                dateMap[dateStr].visits += 1;
+                dateMap[dateStr].amount += amt;
+            });
+
+            // Populate Date-wise Rows
+            Object.keys(dateMap).forEach((dateKey) => {
+                const dayData = dateMap[dateKey];
+                historyTable.innerHTML += `
+                    <tr class="py-2">
+                        <td class="py-2 font-bold text-gray-200">${dateKey}</td>
+                        <td class="py-2 text-center text-emerald-400 font-bold">${dayData.visits} Shops Visited</td>
+                        <td class="py-2 text-right font-black text-amber-400">Rs. ${dayData.amount.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('modalRiderTotalAmount').innerText = `Rs. ${grandTotalAmount.toLocaleString()}`;
+        document.getElementById('modalRiderTotalVisits').innerText = grandTotalVisits;
+        document.getElementById('riderDetailModal').classList.remove('hidden');
+
+    } catch (err) {
+        alert("Error loading rider history: " + err.message);
+    }
+};
+
+window.deleteCurrentRider = async () => {
+    if (!currentModalRiderId) return;
+    if (confirm("Kya aap waqai is rider ko delete karna chahte hain?")) {
+        try {
+            await deleteDoc(doc(db, "riders", currentModalRiderId));
+            alert("✅ Rider successfully removed!");
+            closeRiderModal();
+        } catch (err) {
+            alert("Error deleting rider: " + err.message);
+        }
+    }
+};
+
+window.closeRiderModal = () => {
+    document.getElementById('riderDetailModal').classList.add('hidden');
+    currentModalRiderId = null;
+};
+
+// Shop Modal Helpers
 window.openShopDetails = async (shopId) => {
     try {
         currentModalShopId = shopId;
@@ -153,7 +315,6 @@ window.openShopDetails = async (shopId) => {
         document.getElementById('modalShopPhone').innerText = shop.phone;
         document.getElementById('modalQrSubtext').innerText = `ID: ${shopId}`;
 
-        // Render QR Code inside Modal
         const modalQrContainer = document.getElementById("modalQrcode");
         modalQrContainer.innerHTML = "";
 
@@ -166,7 +327,6 @@ window.openShopDetails = async (shopId) => {
             modalQrContainer.appendChild(img);
         }
 
-        // Fetch collections for this specific shop
         const qHistory = query(collection(db, "collections"), where("shopId", "==", shopId));
         const historySnap = await getDocs(qHistory);
 
@@ -200,16 +360,12 @@ window.openShopDetails = async (shopId) => {
     }
 };
 
-// 5. Delete Shop Function
 window.deleteCurrentShop = async () => {
     if (!currentModalShopId) return;
-    
-    const confirmDelete = confirm("Kya aap waqai is dukaan ko delete karna chahte hain? Database se is shop ka record khatam ho jaye ga.");
-    
-    if (confirmDelete) {
+    if (confirm("Kya aap waqai is dukaan ko delete karna chahte hain?")) {
         try {
             await deleteDoc(doc(db, "shops", currentModalShopId));
-            alert("✅ Shop database se successfully delete ho gayi!");
+            alert("✅ Shop successfully deleted!");
             closeShopModal();
         } catch (error) {
             alert("Error deleting shop: " + error.message);
