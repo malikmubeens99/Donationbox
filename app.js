@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentModalShopId = null;
 let currentModalRiderId = null;
 
-// Tab Switcher Function
+// Tab Switcher
 window.switchTab = (tab) => {
     const shopsView = document.getElementById('tabShopsView');
     const ridersView = document.getElementById('tabRidersView');
@@ -40,11 +40,11 @@ window.switchTab = (tab) => {
         navRiders.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-turkish-700 text-white font-semibold shadow-md border border-turkish-500/30 transition";
         navShops.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white transition";
         pageTitle.innerText = "Rider Fleet Management";
-        pageSubTitle.innerText = "Track rider performance, daily collections, and visits";
+        pageSubTitle.innerText = "Track rider performance, daily collections, and PIN codes";
     }
 };
 
-// 1. Add Shop & Generate Box QR Code
+// 1. Add Shop & Generate QR
 const addShopForm = document.getElementById('addShopForm');
 if (addShopForm) {
     addShopForm.addEventListener('submit', async (e) => {
@@ -91,7 +91,7 @@ if (addShopForm) {
     });
 }
 
-// 2. Fetch & Display All Registered Shops List
+// 2. Display All Registered Shops List
 const shopsListTable = document.getElementById('shopsListTable');
 if (shopsListTable) {
     const qShops = query(collection(db, "shops"), orderBy("createdAt", "desc"));
@@ -128,7 +128,7 @@ if (shopsListTable) {
     });
 }
 
-// 3. Live Collection Logs Feed
+// 3. Live Collection Feed (Shows Rider Code)
 const collectionLogs = document.getElementById('collectionLogs');
 if (collectionLogs) {
     const qCollections = query(collection(db, "collections"), orderBy("timestamp", "desc"));
@@ -144,14 +144,15 @@ if (collectionLogs) {
             count++;
 
             const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString('en-PK', { timeZone: 'Asia/Karachi' }) : 'Just now';
-            
+            const riderBadge = data.riderCode ? `${data.collectorName} (#${data.riderCode})` : data.collectorName;
+
             collectionLogs.innerHTML += `
                 <tr class="hover:bg-turkish-800/30 transition">
                     <td class="py-3 px-3 text-xs text-gray-400">${date}</td>
                     <td class="py-3 px-3 font-bold text-white">${data.shopName}</td>
                     <td class="py-3 px-3 text-xs text-turkish-500">${data.area}</td>
                     <td class="py-3 px-3 font-black text-amber-400 text-right">Rs. ${data.amount}</td>
-                    <td class="py-3 px-3 text-xs text-gray-300 text-right">${data.collectorName}</td>
+                    <td class="py-3 px-3 text-xs text-gray-300 text-right">${riderBadge}</td>
                 </tr>
             `;
         });
@@ -165,25 +166,35 @@ if (collectionLogs) {
     });
 }
 
-// 4. ADD RIDER & DISPLAY RIDERS FLEET (NEW)
+// 4. ADD RIDER WITH 4-DIGIT PIN CODE
 const addRiderForm = document.getElementById('addRiderForm');
 if (addRiderForm) {
     addRiderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const name = document.getElementById('riderName').value;
+        const code = document.getElementById('riderCode').value;
         const phone = document.getElementById('riderPhone').value;
         const area = document.getElementById('riderArea').value;
+
+        // Check if code is unique
+        const qCodeCheck = query(collection(db, "riders"), where("code", "==", code));
+        const codeSnap = await getDocs(qCodeCheck);
+        if(!codeSnap.empty) {
+            alert("Error: Yeh 4-digit code pehle se kisi doosre rider ko allot ho chuka hai! Koi naya code rakhein.");
+            return;
+        }
 
         try {
             await addDoc(collection(db, "riders"), {
                 name: name,
+                code: code,
                 phone: phone,
                 area: area,
                 createdAt: serverTimestamp()
             });
 
-            alert("✅ Rider successfully registered!");
+            alert(`✅ Rider (${name}) successfully registered with Code: ${code}!`);
             addRiderForm.reset();
         } catch (err) {
             alert("Error registering rider: " + err.message);
@@ -203,10 +214,11 @@ if (ridersListTable) {
             const id = docSnap.id;
 
             ridersListTable.innerHTML += `
-                <tr class="hover:bg-turkish-800/40 transition cursor-pointer" onclick="openRiderDetails('${id}', '${rider.name}')">
+                <tr class="hover:bg-turkish-800/40 transition cursor-pointer" onclick="openRiderDetails('${id}', '${rider.code}')">
                     <td class="py-3 px-3 font-bold text-white flex items-center gap-2">
                         <span class="text-xs text-gold-400">🛵</span> ${rider.name}
                     </td>
+                    <td class="py-3 px-3 font-mono font-bold text-amber-400 text-xs">#${rider.code || 'N/A'}</td>
                     <td class="py-3 px-3 text-xs text-turkish-500">${rider.phone}</td>
                     <td class="py-3 px-3 text-xs text-gray-400">${rider.area}</td>
                     <td class="py-3 px-3 text-right">
@@ -220,19 +232,20 @@ if (ridersListTable) {
     });
 }
 
-// 5. RIDER PERFORMANCE HISTORY MODAL (Date-Wise Summary)
-window.openRiderDetails = async (riderId, riderName) => {
+// 5. RIDER PERFORMANCE HISTORY (Queries by Unique Rider Code)
+window.openRiderDetails = async (riderId, riderCode) => {
     try {
         currentModalRiderId = riderId;
         const riderSnap = await getDoc(doc(db, "riders", riderId));
         if (!riderSnap.exists()) return;
         const rider = riderSnap.data();
 
+        document.getElementById('modalRiderCodeBadge').innerText = `RIDER PIN: #${rider.code}`;
         document.getElementById('modalRiderName').innerText = rider.name;
         document.getElementById('modalRiderArea').innerText = `Assigned Route: ${rider.area} | ${rider.phone}`;
 
-        // Query all collections done by this rider (by Name match)
-        const qHistory = query(collection(db, "collections"), where("collectorName", "==", rider.name));
+        // Query collections specifically matching this rider's PIN Code
+        const qHistory = query(collection(db, "collections"), where("riderCode", "==", rider.code));
         const historySnap = await getDocs(qHistory);
 
         const historyTable = document.getElementById('modalRiderHistoryTable');
@@ -240,10 +253,10 @@ window.openRiderDetails = async (riderId, riderName) => {
 
         let grandTotalAmount = 0;
         let grandTotalVisits = 0;
-        const dateMap = {}; // Group by date string: 'YYYY-MM-DD'
+        const dateMap = {};
 
         if (historySnap.empty) {
-            historyTable.innerHTML = `<tr><td colspan="3" class="py-3 text-center text-gray-500">Is rider ki koi collection history nahi mili.</td></tr>`;
+            historyTable.innerHTML = `<tr><td colspan="3" class="py-3 text-center text-gray-500">Is rider (PIN: #${rider.code}) ki koi collection history nahi mili.</td></tr>`;
         } else {
             historySnap.forEach((docSnap) => {
                 const item = docSnap.data();
@@ -260,7 +273,6 @@ window.openRiderDetails = async (riderId, riderName) => {
                 dateMap[dateStr].amount += amt;
             });
 
-            // Populate Date-wise Rows
             Object.keys(dateMap).forEach((dateKey) => {
                 const dayData = dateMap[dateKey];
                 historyTable.innerHTML += `
