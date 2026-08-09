@@ -26,25 +26,100 @@ const firebaseConfig = {
   measurementId: "G-RS2FQ425S0"
 };
 
-// Initialize Firebase & Firestore Engine
+// Initialize Firebase Engine
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Global State Caching for Analytics
+// Global Caching
 let globalShopsCache = [];
 let globalCollectionsCache = [];
 
 // ==========================================
-// 1. GLOBAL NAVIGATION & HELPER FUNCTIONS
+// 🎨 INTERACTIVE POPUP & TOAST NOTIFICATION SYSTEM
 // ==========================================
 
-// Tab Switcher Function
+// Floating Toast Notification
+window.showToast = (title, message, type = 'success') => {
+    let toast = document.getElementById('customInteractiveToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'customInteractiveToast';
+        document.body.appendChild(toast);
+    }
+
+    const isSuccess = type === 'success';
+    const borderCol = isSuccess ? 'border-amber-500' : 'border-rose-500';
+    const icon = isSuccess ? '✨' : '⚠️';
+
+    toast.className = `fixed bottom-6 right-6 z-50 flex items-center gap-4 p-4 rounded-2xl bg-turkish-900 border-2 ${borderCol} shadow-2xl transition-all transform translate-y-0 opacity-100 duration-300 max-w-sm`;
+    toast.innerHTML = `
+        <div class="text-3xl">${icon}</div>
+        <div>
+            <h4 class="font-extrabold text-xs text-gold-400 uppercase tracking-widest">${title}</h4>
+            <p class="text-xs text-gray-200 mt-0.5">${message}</p>
+        </div>
+    `;
+
+    setTimeout(() => {
+        toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-10 opacity-0 pointer-events-none');
+    }, 4000);
+};
+
+// Interactive QR Sticker Modal Popup
+window.showQRModalPopup = (shopName, shopArea, boxId) => {
+    let modal = document.getElementById('qrModalPopup');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qrModalPopup';
+        modal.className = "fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50";
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="bg-turkish-900 border-2 border-gold-500 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs text-gold-400 font-extrabold tracking-widest uppercase">✨ Asset Created</span>
+                <button onclick="document.getElementById('qrModalPopup').remove()" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <!-- Print Ready Sticker Container -->
+            <div id="printableQrSticker" class="bg-white text-gray-900 p-5 rounded-2xl shadow-xl border-4 border-turkish-700 inline-block w-full">
+                <p class="text-[9px] font-extrabold tracking-widest text-turkish-700 uppercase mb-1">Wisdom Foundation</p>
+                <h3 class="font-black text-base text-gray-900">${shopName}</h3>
+                <p class="text-xs text-gray-600 font-semibold mb-2">${shopArea}</p>
+                
+                <div id="modalQrContainer" class="flex justify-center my-3 p-2 bg-white"></div>
+                
+                <p class="text-[11px] font-mono font-bold text-gray-600">BOX ID: <span class="text-turkish-700">${boxId}</span></p>
+            </div>
+
+            <div class="flex gap-2 mt-5">
+                <button onclick="window.print()" class="flex-1 py-3 bg-turkish-700 hover:bg-turkish-600 text-white rounded-xl text-xs font-extrabold transition">🖨️ Print Sticker</button>
+                <button onclick="document.getElementById('qrModalPopup').remove()" class="py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold">Done</button>
+            </div>
+        </div>
+    `;
+
+    // Safe Dual QR Code Generation
+    const qrTarget = document.getElementById("modalQrContainer");
+    qrTarget.innerHTML = "";
+    if (typeof QRCode !== 'undefined') {
+        new QRCode(qrTarget, { text: boxId, width: 150, height: 150 });
+    } else {
+        const img = document.createElement('img');
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(boxId)}`;
+        img.className = "mx-auto rounded-lg";
+        qrTarget.appendChild(img);
+    }
+};
+
+// ==========================================
+// 📱 GLOBAL NAVIGATION & GPS CAPTURE
+// ==========================================
+
 window.switchTab = (tab) => {
     const views = ['viewDashboard', 'viewAudit', 'viewRiders', 'viewAnalytics'];
-    views.forEach(v => {
-        const el = document.getElementById(v);
-        if (el) el.classList.add('hidden');
-    });
+    views.forEach(v => document.getElementById(v)?.classList.add('hidden'));
 
     if (tab === 'dashboard') document.getElementById('viewDashboard')?.classList.remove('hidden');
     if (tab === 'audit') document.getElementById('viewAudit')?.classList.remove('hidden');
@@ -55,24 +130,23 @@ window.switchTab = (tab) => {
     }
 };
 
-// Device Current GPS Capture
 window.captureCurrentGPS = () => {
     if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 document.getElementById('lat').value = pos.coords.latitude;
                 document.getElementById('lng').value = pos.coords.longitude;
-                alert("📍 Current GPS Coordinates Successfully Captured!");
+                showToast("GPS Locked", "Latitude & Longitude coordinates updated!", "success");
             },
-            (err) => alert("GPS Access Denied/Error: " + err.message)
+            (err) => showToast("GPS Error", err.message, "error")
         );
     } else {
-        alert("GPS Location service is not supported by your browser.");
+        showToast("Device Error", "Geolocation is not supported by your browser.", "error");
     }
 };
 
 // ==========================================
-// 2. SHOPS & DONATION BOX ASSET MANAGEMENT
+// 🏪 SHOPS & QR GENERATION ENGINE
 // ==========================================
 
 const addShopForm = document.getElementById('addShopForm');
@@ -88,7 +162,6 @@ if (addShopForm) {
         const lng = Number(document.getElementById('lng').value || 0);
 
         try {
-            // Save Shop Document
             const docRef = await addDoc(collection(db, "shops"), {
                 name: name,
                 owner: owner,
@@ -102,7 +175,6 @@ if (addShopForm) {
             const shopId = docRef.id;
             const boxId = `BOX-${shopId.slice(0, 5).toUpperCase()}`;
 
-            // Save Box Asset Document
             await addDoc(collection(db, "donationBoxes"), {
                 boxId: boxId,
                 shopId: shopId,
@@ -111,16 +183,19 @@ if (addShopForm) {
                 installedAt: serverTimestamp()
             });
 
-            alert(`✅ Shop Registered Successfully!\nAssigned Box ID: ${boxId}`);
             addShopForm.reset();
+            showToast("Success", "Shop & Box Asset saved to cloud!", "success");
+            
+            // Trigger Interactive QR Code Modal
+            showQRModalPopup(name, area, boxId);
 
         } catch (error) {
-            alert("Error adding shop: " + error.message);
+            showToast("System Error", error.message, "error");
         }
     });
 }
 
-// Live Sync: Shops Directory
+// Live Sync: Shops Directory Table
 const shopsTableBody = document.getElementById('shopsTableBody');
 if (shopsTableBody) {
     const qShops = query(collection(db, "shops"), orderBy("createdAt", "desc"));
@@ -148,8 +223,8 @@ if (shopsTableBody) {
                     </td>
                     <td class="py-3 text-turkish-500 font-medium">${shop.area}</td>
                     <td class="py-3 text-right">
-                        <button onclick="inspectShopAsset('${id}')" class="px-2.5 py-1 bg-turkish-700/80 hover:bg-turkish-600 text-[10px] text-white rounded-lg border border-turkish-500/30 font-bold transition">
-                            Inspect & QR ➔
+                        <button onclick="showQRModalPopup('${shop.name.replace(/'/g, "\\'")}', '${shop.area.replace(/'/g, "\\'")}', '${boxId}')" class="px-2.5 py-1 bg-turkish-700 hover:bg-turkish-600 text-[10px] text-white rounded-lg border border-turkish-500/30 font-bold transition">
+                            View QR Sticker ➔
                         </button>
                     </td>
                 </tr>
@@ -163,7 +238,7 @@ if (shopsTableBody) {
 }
 
 // ==========================================
-// 3. RIDER FLEET & ROUTE MANAGEMENT
+// 🛵 RIDER FLEET & PIN MANAGEMENT
 // ==========================================
 
 const addRiderForm = document.getElementById('addRiderForm');
@@ -176,12 +251,11 @@ if (addRiderForm) {
         const phone = document.getElementById('riderPhone').value;
         const area = document.getElementById('riderArea').value;
 
-        // Check PIN uniqueness
         const qCheck = query(collection(db, "riders"), where("code", "==", code));
         const checkSnap = await getDocs(qCheck);
 
         if (!checkSnap.empty) {
-            alert("❌ Error: Yeh 4-digit PIN code pehle se kisi doosre rider ko allot ho chuka hai!");
+            showToast("Duplicate Code", "Yeh 4-Digit PIN pehle se kisi doosre rider ka hai!", "error");
             return;
         }
 
@@ -194,15 +268,15 @@ if (addRiderForm) {
                 createdAt: serverTimestamp()
             });
 
-            alert(`✅ Rider (${name}) successfully registered with PIN: #${code}`);
+            showToast("Rider Registered", `Rider ${name} (PIN: #${code}) saved!`, "success");
             addRiderForm.reset();
         } catch (err) {
-            alert("Error registering rider: " + err.message);
+            showToast("Error", err.message, "error");
         }
     });
 }
 
-// Live Sync: Riders Table
+// Live Sync: Riders Fleet
 const ridersListTable = document.getElementById('ridersListTable');
 if (ridersListTable) {
     const qRiders = query(collection(db, "riders"), orderBy("createdAt", "desc"));
@@ -212,7 +286,6 @@ if (ridersListTable) {
 
         snapshot.forEach((docSnap) => {
             const rider = docSnap.data();
-            const id = docSnap.id;
 
             ridersListTable.innerHTML += `
                 <tr class="hover:bg-turkish-800/40 transition">
@@ -229,7 +302,7 @@ if (ridersListTable) {
 }
 
 // ==========================================
-// 4. LIVE COLLECTIONS & OFFICE CASH AUDIT
+// 🏦 OFFICE CASH AUDIT & RECONCILIATION
 // ==========================================
 
 const auditTableBody = document.getElementById('auditTableBody');
@@ -277,7 +350,6 @@ onSnapshot(qCollections, (snapshot) => {
         }
     });
 
-    // Update Top KPIs
     if (document.getElementById('kpiTotalCash')) {
         document.getElementById('kpiTotalCash').innerText = `Rs. ${grandTotalCash.toLocaleString()}`;
     }
@@ -286,23 +358,20 @@ onSnapshot(qCollections, (snapshot) => {
     }
 });
 
-// Cash Approval Action by Office Auditor
 window.approveCashCollection = async (docId) => {
-    if (confirm("Kya aap confirm karte hain ke is collection ka physical cash office mein receive ho gaya hai?")) {
-        try {
-            await updateDoc(doc(db, "collections", docId), {
-                status: "Verified",
-                verifiedAt: serverTimestamp()
-            });
-            alert("✅ Office Cash Verified Successfully!");
-        } catch (err) {
-            alert("Error verifying collection: " + err.message);
-        }
+    try {
+        await updateDoc(doc(db, "collections", docId), {
+            status: "Verified",
+            verifiedAt: serverTimestamp()
+        });
+        showToast("Cash Approved", "Physical cash verified & locked in ledger!", "success");
+    } catch (err) {
+        showToast("Error", err.message, "error");
     }
 };
 
 // ==========================================
-// 5. ANOMALY & INACTIVE BOXES AUDIT ENGINE
+// 🚨 ANOMALY DETECTION ENGINE
 // ==========================================
 
 function runAnomalyDetectionEngine() {
@@ -313,7 +382,6 @@ function runAnomalyDetectionEngine() {
     const now = new Date();
     let inactiveBoxCount = 0;
 
-    // Map latest visit date to each shop ID
     const shopVisitMap = {};
     globalCollectionsCache.forEach(col => {
         if (!col.shopId) return;
@@ -341,7 +409,6 @@ function runAnomalyDetectionEngine() {
             lastRiderText = `${lastVisit.riderName} (#${lastVisit.riderCode})`;
         }
 
-        // Highlight shops with no visits in >= 30 days
         if (daysInactive >= 30) {
             inactiveBoxCount++;
 
@@ -372,11 +439,3 @@ function runAnomalyDetectionEngine() {
         document.getElementById('kpiInactiveShops').innerText = inactiveBoxCount;
     }
 }
-
-// Shop Inspection Helper
-window.inspectShopAsset = (shopId) => {
-    const shop = globalShopsCache.find(s => s.id === shopId);
-    if (shop) {
-        alert(`🏪 SHOP DETAILS:\nName: ${shop.name}\nOwner: ${shop.owner}\nPhone: ${shop.phone}\nArea: ${shop.area}\nBox ID: ${shop.boxId}`);
-    }
-};
