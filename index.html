@@ -22,14 +22,34 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1315; color: #e2e8f0; }
         .erp-card { background: rgba(15, 44, 47, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(20, 184, 166, 0.2); }
+        .nav-active { background-color: #0f766e !important; color: #ffffff !important; border-left: 4px solid #f59e0b; font-weight: 700; }
+
+        /* Print Layout Rules */
+        @media print {
+            body * { visibility: hidden; }
+            #bulkPrintModal, #bulkPrintModal * { visibility: visible; }
+            #bulkPrintModal { position: absolute; left: 0; top: 0; width: 100%; background: #fff; color: #000; padding: 0; }
+            .no-print { display: none !important; }
+            .print-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 15px !important; }
+            .sticker-card { border: 2px solid #000 !important; page-break-inside: avoid; }
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex flex-col md:flex-row min-h-screen md:h-screen overflow-x-hidden md:overflow-hidden">
+
+    <!-- Mobile Top Navigation Bar -->
+    <div class="md:hidden bg-turkish-900 border-b border-turkish-800 p-4 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">🕌</span>
+            <span class="font-extrabold text-white text-sm">WISDOM ERP</span>
+        </div>
+        <button onclick="toggleMobileSidebar()" class="text-gold-400 text-2xl font-bold">&equiv;</button>
+    </div>
 
     <!-- Sidebar Navigation -->
-    <aside class="w-64 bg-turkish-900 border-r border-turkish-800 p-5 flex flex-col justify-between">
+    <aside id="mainSidebar" class="hidden md:flex w-full md:w-64 bg-turkish-900 border-r border-turkish-800 p-5 flex-col justify-between z-30">
         <div>
-            <div class="flex items-center gap-3 mb-8 pb-4 border-b border-turkish-800">
+            <div class="hidden md:flex items-center gap-3 mb-8 pb-4 border-b border-turkish-800">
                 <span class="text-3xl">🕌</span>
                 <div>
                     <h1 class="font-extrabold text-white text-base tracking-wider">WISDOM ERP</h1>
@@ -37,97 +57,132 @@
                 </div>
             </div>
             <nav class="space-y-2">
-                <button onclick="switchTab('dashboard')" id="navDash" class="w-full text-left px-4 py-2.5 rounded-xl bg-turkish-700 text-white font-semibold text-xs transition">📊 Master Dashboard</button>
+                <button onclick="switchTab('dashboard')" id="navDash" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition nav-active">📊 Master Dashboard</button>
+                <button onclick="switchTab('shopsDirectory')" id="navShops" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">🏪 Shops & QR Print</button>
                 <button onclick="switchTab('audit')" id="navAudit" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">🏦 Office Cash Audit</button>
                 <button onclick="switchTab('riders')" id="navRiders" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">🛵 Route & Riders</button>
-                <button onclick="switchTab('analytics')" id="navAnalytics" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">🚨 Anomaly & Inactive Alert</button>
+                <button onclick="switchTab('analytics')" id="navAnalytics" class="w-full text-left px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">🚨 Inactive Alert</button>
                 <a href="collector.html" target="_blank" class="block px-4 py-2.5 rounded-xl text-gray-400 hover:bg-turkish-800 hover:text-white text-xs transition">📱 Collector PWA App</a>
             </nav>
         </div>
-        <div class="text-[10px] text-gray-500 border-t border-turkish-800 pt-3">
-            System v2.5 ERP Build | August 2026
+        <div class="text-[10px] text-gray-500 border-t border-turkish-800 pt-3 mt-4 md:mt-0">
+            System v3.5 | Active Dark Nav
         </div>
     </aside>
 
     <!-- Main Workspace -->
-    <main class="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-turkish-900 via-[#0b1315] to-[#050b0c]">
+    <main class="flex-1 p-4 md:p-6 overflow-y-auto bg-gradient-to-br from-turkish-900 via-[#0b1315] to-[#050b0c]">
         
         <!-- Header Metrics Bar -->
-        <header class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="erp-card rounded-2xl p-4">
-                <p class="text-[10px] font-bold text-gray-400">TOTAL SYSTEM CASH</p>
-                <h3 class="text-2xl font-black text-gold-400 mt-1" id="kpiTotalCash">Rs. 0</h3>
+        <header class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div class="erp-card rounded-2xl p-3 md:p-4">
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400">TOTAL SYSTEM CASH</p>
+                <h3 class="text-lg md:text-2xl font-black text-gold-400 mt-1" id="kpiTotalCash">Rs. 0</h3>
             </div>
-            <div class="erp-card rounded-2xl p-4">
-                <p class="text-[10px] font-bold text-gray-400">ACTIVE BOXES / SHOPS</p>
-                <h3 class="text-2xl font-black text-turkish-500 mt-1" id="kpiActiveBoxes">0</h3>
+            <div class="erp-card rounded-2xl p-3 md:p-4">
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400">ACTIVE BOXES</p>
+                <h3 class="text-lg md:text-2xl font-black text-turkish-500 mt-1" id="kpiActiveBoxes">0</h3>
             </div>
-            <div class="erp-card rounded-2xl p-4">
-                <p class="text-[10px] font-bold text-gray-400">PENDING OFFICE VERIFICATION</p>
-                <h3 class="text-2xl font-black text-amber-500 mt-1" id="kpiPendingVerify">Rs. 0</h3>
+            <div class="erp-card rounded-2xl p-3 md:p-4">
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400">PENDING OFFICE</p>
+                <h3 class="text-lg md:text-2xl font-black text-amber-500 mt-1" id="kpiPendingVerify">Rs. 0</h3>
             </div>
-            <div class="erp-card rounded-2xl p-4">
-                <p class="text-[10px] font-bold text-gray-400">MISSED / INACTIVE (>30 DAYS)</p>
-                <h3 class="text-2xl font-black text-rose-500 mt-1" id="kpiInactiveShops">0</h3>
+            <div class="erp-card rounded-2xl p-3 md:p-4">
+                <p class="text-[9px] md:text-[10px] font-bold text-gray-400">INACTIVE (>30 DAYS)</p>
+                <h3 class="text-lg md:text-2xl font-black text-rose-500 mt-1" id="kpiInactiveShops">0</h3>
             </div>
         </header>
 
-        <!-- VIEW 1: MASTER DASHBOARD & SHOPS -->
+        <!-- VIEW 1: MASTER DASHBOARD & ADD SHOP -->
         <div id="viewDashboard" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Add Shop with GPS coordinates -->
-                <div class="erp-card rounded-2xl p-5 border-t-2 border-gold-500">
+                <!-- Add Shop Form -->
+                <div class="erp-card rounded-2xl p-4 md:p-5 border-t-2 border-gold-500">
                     <h3 class="text-sm font-bold text-white mb-4">✨ Register New Shop & Box Asset</h3>
                     <form id="addShopForm" class="space-y-3">
-                        <input type="text" id="shopName" placeholder="Shop Name (e.g., Madina Store)" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
-                        <input type="text" id="ownerName" placeholder="Owner Name" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white">
-                        <input type="tel" id="ownerPhone" placeholder="Phone Number" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
-                        <input type="text" id="shopArea" placeholder="Market Area / Zone" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
-                        
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" step="any" id="lat" placeholder="Latitude (GPS)" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
-                            <input type="number" step="any" id="lng" placeholder="Longitude (GPS)" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
-                        </div>
-                        <button type="button" onclick="captureCurrentGPS()" class="w-full text-[10px] bg-turkish-800 text-turkish-500 py-1.5 rounded-lg border border-turkish-700">📍 Get Current Device Location</button>
-
+                        <input type="text" id="shopName" placeholder="Shop Name (e.g., Madina Store)" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                        <input type="text" id="ownerName" placeholder="Owner Name" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white">
+                        <input type="tel" id="ownerPhone" placeholder="Phone Number" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                        <input type="text" id="shopArea" placeholder="Market Area / Zone" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
                         <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 to-amber-600 font-extrabold text-turkish-900 text-xs shadow-lg">Generate Box ID & Sticker</button>
                     </form>
                 </div>
 
-                <!-- Shops Directory Table -->
-                <div class="lg:col-span-2 erp-card rounded-2xl p-5">
-                    <h3 class="text-sm font-bold text-white mb-4">🏪 Active Donation Box Directory</h3>
+                <!-- Recent Collections Feed -->
+                <div class="lg:col-span-2 erp-card rounded-2xl p-4 md:p-5">
+                    <h3 class="text-sm font-bold text-white mb-4">⚡ Live Collection Activity Feed</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
+                        <table class="w-full text-left text-xs border-collapse min-w-[500px]">
                             <thead>
                                 <tr class="text-gold-400 border-b border-turkish-800">
-                                    <th class="pb-2">Box & Shop ID</th>
-                                    <th class="pb-2">Owner / Phone</th>
-                                    <th class="pb-2">Area Zone</th>
-                                    <th class="pb-2 text-right">Avg Monthly Yield</th>
+                                    <th class="pb-2">Date / Time</th>
+                                    <th class="pb-2">Shop</th>
+                                    <th class="pb-2">Collector</th>
+                                    <th class="pb-2 text-right">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody id="shopsTableBody" class="divide-y divide-turkish-800/40"></tbody>
+                            <tbody id="dashLiveFeedBody" class="divide-y divide-turkish-800/40"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 2: OFFICE CASH AUDIT & RECEIVING -->
-        <div id="viewAudit" class="space-y-6 hidden">
-            <div class="erp-card rounded-2xl p-6 border-l-4 border-amber-500">
-                <h3 class="text-base font-bold text-white mb-2">🏦 Office Cash Reconciliation Module</h3>
-                <p class="text-xs text-gray-400 mb-6">Verify physical cash brought by collectors against app records.</p>
+        <!-- VIEW 2: DEDICATED SHOPS DIRECTORY & BULK QR PRINT -->
+        <div id="viewShopsDirectory" class="space-y-6 hidden">
+            <div class="erp-card rounded-2xl p-4 md:p-6 border-t-2 border-turkish-500">
                 
+                <!-- Search & Bulk Print Action Bar -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-turkish-800">
+                    <div>
+                        <h3 class="text-base font-bold text-white">🏪 Registered Shops Directory</h3>
+                        <p class="text-xs text-gray-400">Select shops to generate a combined printable QR Sticker sheet.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <input type="text" id="searchShopInput" onkeyup="filterShopsDirectory()" placeholder="Search Shop / Owner..." class="px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white focus:outline-none w-full md:w-48">
+                        <button onclick="openBulkPrintModal()" class="px-4 py-2 bg-gradient-to-r from-gold-500 to-amber-600 text-turkish-900 font-extrabold rounded-xl text-xs shadow-lg transition">
+                            🖨️ Print Selected QRs (<span id="selectedQrCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-xs border-collapse min-w-[600px]">
                         <thead>
                             <tr class="text-gold-400 border-b border-turkish-800">
-                                <th class="pb-3">Batch Date / ID</th>
+                                <th class="pb-3 w-10 text-center">
+                                    <input type="checkbox" id="selectAllShopsCheckbox" onchange="toggleSelectAllShops(this)" class="accent-gold-500 cursor-pointer">
+                                </th>
+                                <th class="pb-3">Box & Shop Name</th>
+                                <th class="pb-3">Owner Name</th>
+                                <th class="pb-3">Phone</th>
+                                <th class="pb-3">Area / Zone</th>
+                                <th class="pb-3 text-right">Single QR</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shopsDirectoryBody" class="divide-y divide-turkish-800/40"></tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VIEW 3: OFFICE CASH AUDIT & RECEIVING -->
+        <div id="viewAudit" class="space-y-6 hidden">
+            <div class="erp-card rounded-2xl p-4 md:p-6 border-l-4 border-amber-500">
+                <h3 class="text-base font-bold text-white mb-1">🏦 Office Cash Reconciliation Module</h3>
+                <p class="text-xs text-gray-400 mb-4">Verify physical cash brought by collectors against app records.</p>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs min-w-[550px]">
+                        <thead>
+                            <tr class="text-gold-400 border-b border-turkish-800">
+                                <th class="pb-3">Date / Time</th>
                                 <th class="pb-3">Collector Name</th>
-                                <th class="pb-3">App Reported Sum</th>
-                                <th class="pb-3">Shops Collected</th>
+                                <th class="pb-3">Amount</th>
+                                <th class="pb-3">Shop</th>
                                 <th class="pb-3">Audit Status</th>
                                 <th class="pb-3 text-right">Action</th>
                             </tr>
@@ -138,71 +193,68 @@
             </div>
         </div>
 
-        <!-- VIEW 3: ROUTES & RIDERS FLEET (FIXED) -->
+        <!-- VIEW 4: ROUTES & RIDERS FLEET (WITH REPORT HISTORY) -->
         <div id="viewRiders" class="space-y-6 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Add Rider Form -->
-                <div class="lg:col-span-1 erp-card rounded-2xl p-5 border-t-2 border-gold-500">
+                <div class="lg:col-span-1 erp-card rounded-2xl p-4 md:p-5 border-t-2 border-gold-500">
                     <h3 class="text-sm font-bold text-white mb-4">➕ Register New Rider</h3>
                     <form id="addRiderForm" class="space-y-3">
                         <div>
                             <label class="block text-[10px] text-gray-400 mb-1">Rider Full Name</label>
-                            <input type="text" id="riderName" placeholder="e.g. Ali Raza" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                            <input type="text" id="riderName" placeholder="e.g. Ali Raza" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
                         </div>
                         <div>
                             <label class="block text-[10px] text-gray-400 mb-1">Assign 4-Digit PIN Code</label>
-                            <input type="text" id="riderCode" maxlength="4" pattern="\d{4}" placeholder="e.g. 1024" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-gold-500/50 font-mono font-bold text-gold-400 text-sm" required>
-                            <span class="text-[9px] text-gray-500">Rider mobile app par is 4-digit code se login kare ga.</span>
+                            <input type="text" id="riderCode" maxlength="4" pattern="\d{4}" placeholder="e.g. 1024" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-gold-500/50 font-mono font-bold text-gold-400 text-sm" required>
                         </div>
                         <div>
                             <label class="block text-[10px] text-gray-400 mb-1">Phone / WhatsApp</label>
-                            <input type="tel" id="riderPhone" placeholder="03001234567" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                            <input type="tel" id="riderPhone" placeholder="03001234567" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
                         </div>
                         <div>
                             <label class="block text-[10px] text-gray-400 mb-1">Assigned Route / Market Zone</label>
-                            <input type="text" id="riderArea" placeholder="e.g. Johar Town & Township" class="w-full px-3 py-2 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
+                            <input type="text" id="riderArea" placeholder="e.g. Johar Town & Township" class="w-full px-3 py-2.5 rounded-xl bg-turkish-900 border border-turkish-700 text-xs text-white" required>
                         </div>
                         <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 to-amber-600 font-extrabold text-turkish-900 text-xs shadow-lg">Save Rider Profile</button>
                     </form>
                 </div>
 
-                <!-- Riders Fleet Directory Table -->
-                <div class="lg:col-span-2 erp-card rounded-2xl p-5">
-                    <h3 class="text-sm font-bold text-white mb-4">🛵 Active Riders Fleet & Daily Routes</h3>
+                <!-- Riders Fleet Directory -->
+                <div class="lg:col-span-2 erp-card rounded-2xl p-4 md:p-5">
+                    <h3 class="text-sm font-bold text-white mb-4">🛵 Active Riders Fleet & Performance Reports</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
+                        <table class="w-full text-left text-xs border-collapse min-w-[450px]">
                             <thead>
                                 <tr class="text-gold-400 border-b border-turkish-800">
                                     <th class="pb-2">Rider Name</th>
                                     <th class="pb-2">PIN Code</th>
-                                    <th class="pb-2">Phone</th>
                                     <th class="pb-2">Assigned Route</th>
+                                    <th class="pb-2 text-right">Daily Report</th>
                                 </tr>
                             </thead>
-                            <tbody id="ridersListTable" class="divide-y divide-turkish-800/40">
-                                <!-- Dynamic Rider Rows -->
-                            </tbody>
+                            <tbody id="ridersListTable" class="divide-y divide-turkish-800/40"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 4: ANOMALY & INACTIVE BOXES -->
+        <!-- VIEW 5: ANOMALY & INACTIVE BOXES -->
         <div id="viewAnalytics" class="space-y-6 hidden">
-            <div class="erp-card rounded-2xl p-6 border-l-4 border-rose-500">
-                <h3 class="text-base font-bold text-white mb-2">🚨 Anomaly & Yield Loss Detection Engine</h3>
-                <p class="text-xs text-gray-400 mb-6">Boxes with zero collection for 30+ days or unusual yield drops (>50%).</p>
+            <div class="erp-card rounded-2xl p-4 md:p-6 border-l-4 border-rose-500">
+                <h3 class="text-base font-bold text-white mb-1">🚨 Inactive Boxes Audit Engine</h3>
+                <p class="text-xs text-gray-400 mb-4">Boxes with zero collection for 30+ days.</p>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-xs min-w-[500px]">
                         <thead>
                             <tr class="text-rose-400 border-b border-turkish-800">
-                                <th class="pb-3">Shop & Box ID</th>
+                                <th class="pb-3">Shop & Box Name</th>
                                 <th class="pb-3">Last Collection Date</th>
                                 <th class="pb-3">Days Inactive</th>
                                 <th class="pb-3">Last Assigned Rider</th>
-                                <th class="pb-3">Anomaly Type</th>
+                                <th class="pb-3">Status</th>
                             </tr>
                         </thead>
                         <tbody id="anomalyTableBody" class="divide-y divide-turkish-800/40"></tbody>
@@ -213,6 +265,74 @@
 
     </main>
 
+    <!-- RIDER DAILY REPORT POPUP MODAL -->
+    <div id="riderReportModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-turkish-900 border-2 border-gold-500 rounded-3xl p-6 max-w-lg w-full shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-4 pb-3 border-b border-turkish-800">
+                <div>
+                    <h3 id="modalRiderName" class="font-extrabold text-lg text-white"></h3>
+                    <p id="modalRiderMeta" class="text-xs text-gold-400 font-mono"></p>
+                </div>
+                <button onclick="document.getElementById('riderReportModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="bg-black/40 p-3 rounded-xl border border-turkish-800 text-center">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold">Total Cash Collected</p>
+                    <h4 id="modalRiderGrandTotal" class="text-lg font-black text-gold-400 mt-1">Rs. 0</h4>
+                </div>
+                <div class="bg-black/40 p-3 rounded-xl border border-turkish-800 text-center">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold">Total Boxes Opened</p>
+                    <h4 id="modalRiderGrandBoxes" class="text-lg font-black text-turkish-500 mt-1">0 Boxes</h4>
+                </div>
+            </div>
+
+            <h4 class="text-xs font-bold text-gray-300 mb-2 uppercase tracking-wider">Per-Day Collection Breakdown</h4>
+            <div class="overflow-x-auto bg-black/30 rounded-xl p-2 border border-turkish-800">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-gold-400 border-b border-turkish-800">
+                            <th class="pb-2">Date</th>
+                            <th class="pb-2 text-center">Boxes Opened</th>
+                            <th class="pb-2 text-right">Collection Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalRiderDailyBreakdownBody" class="divide-y divide-turkish-800/40"></tbody>
+                </table>
+            </div>
+
+            <button onclick="document.getElementById('riderReportModal').classList.add('hidden')" class="w-full mt-5 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold">Close Report</button>
+        </div>
+    </div>
+
+    <!-- BULK QR STICKER PRINT MODAL -->
+    <div id="bulkPrintModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden no-print">
+        <div class="bg-turkish-900 border-2 border-gold-500 rounded-3xl p-6 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-turkish-800 no-print">
+                <div>
+                    <h3 class="font-extrabold text-lg text-white">🖨️ Combined QR Code Sheet</h3>
+                    <p class="text-xs text-gray-400">Ready to print on sticker paper.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="px-4 py-2 bg-gold-500 text-turkish-900 font-extrabold rounded-xl text-xs">Print Now</button>
+                    <button onclick="document.getElementById('bulkPrintModal').classList.add('hidden')" class="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold">Close</button>
+                </div>
+            </div>
+
+            <div id="bulkStickersGrid" class="print-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- QR Stickers inject here -->
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="app.js"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('flex');
+        }
+    </script>
 </body>
 </html>
